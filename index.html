@@ -21,6 +21,29 @@
     background:var(--bg);
     color:var(--text);
     line-height:1.6;
+    position:relative;
+  }
+  body::before{
+    content:"";
+    position:fixed;
+    top:0; left:0; right:0; bottom:0;
+    background-image:url('logo.jpg');
+    background-repeat:no-repeat;
+    background-position:center;
+    background-size:min(60vw, 500px);
+    opacity:0.06;
+    pointer-events:none;
+    z-index:0;
+  }
+  .header, .container{
+    position:relative;
+    z-index:1;
+  }
+  .header-logo{
+    width:64px;
+    height:64px;
+    object-fit:contain;
+    margin-bottom:10px;
   }
   .header{
     background:linear-gradient(135deg, var(--tesr-red) 0%, #3a0a0c 100%);
@@ -53,7 +76,7 @@
     padding:24px 16px 80px;
   }
   .card{
-    background:var(--card);
+    background:rgba(255,255,255,0.92);
     border-radius:10px;
     box-shadow:0 2px 10px rgba(0,0,0,0.08);
     padding:24px;
@@ -128,6 +151,21 @@
     margin-bottom:10px;
   }
   .pay-info b{ color:var(--tesr-red); }
+  .qr-wrap{
+    text-align:center;
+    margin-bottom:14px;
+  }
+  .qr-wrap img{
+    width:220px;
+    max-width:70%;
+    border-radius:10px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.15);
+  }
+  .qr-wrap p{
+    font-size:0.85rem;
+    color:var(--muted);
+    margin:6px 0 0;
+  }
   button[type=submit]{
     width:100%;
     background:var(--tesr-red);
@@ -161,6 +199,7 @@
 <body>
 
 <div class="header">
+  <img class="header-logo" src="logo.jpg" alt="TESR Logo">
   <h1>แบบฟอร์มลงทะเบียนเรียน<br>ROS 2 Basic for Mobile Robot (สอนสด)</h1>
   <p>by TESR Academy</p>
 </div>
@@ -217,7 +256,7 @@
       1. รถยนต์ (จอดรถฟรี ข้างบริษัท)<br>
       2. MRT สายสีม่วง ลงสถานี สะพานพระนั่งเกล้า (ทางออกที่ 1)<br><br>
       กรุณาเตรียม Notebook (Window 10-11) มาด้วย<br>
-      หากต้องการสอบถามข้อมูลเพิ่มเติม ติดต่อผ่าน Line: TESR Line OA
+      หากต้องการสอบถามข้อมูลเพิ่มเติม ติดต่อผ่าน Line: <a href="https://www.tesrshop.com/line" target="_blank">www.tesrshop.com/line</a>
     </div>
   </div>
 
@@ -237,6 +276,10 @@
     <input type="email" name="email" required>
 
     <label>หลักฐานการจ่าย <span class="req">*</span></label>
+    <div class="qr-wrap">
+      <img src="qrcode.jpeg" alt="TESR QR Code พร้อมเพย์ รับเงิน">
+      <p>สแกนจ่ายผ่าน QR พร้อมเพย์ได้ทุกธนาคาร</p>
+    </div>
     <div class="pay-info">
       สามารถโอนเงินมาได้ที่ <b>ธนาคารกสิกรไทย (K-Bank)</b><br>
       ชื่อบัญชี บจก. ทีอีเอสอาร์ บัญชีเลขที่ 027-3-58302-5 สาขาจามจุรี สแควร์<br><br>
