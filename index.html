@@ -345,7 +345,7 @@
 
 <script>
   // วาง URL ที่ได้จากการ Deploy Google Apps Script (ลงท้ายด้วย /exec) ตรงนี้
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyknwHoqlyoIqXC7ZRvB_HCI3vyb8xwClZA57PhVg6SoSqr6QtbI2gRK7JlXY5sI0-4/exec";
+  const SCRIPT_URL = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
 
   const form = document.getElementById('regForm');
   const statusEl = document.getElementById('status');
@@ -393,6 +393,7 @@
 
       await fetch(SCRIPT_URL, {
         method: 'POST',
+        mode: 'no-cors', // สำคัญ: Apps Script ตอบกลับด้วย redirect ที่ fetch บางเบราว์เซอร์จัดการไม่ผ่าน
         body: JSON.stringify(payload),
         headers: { 'Content-Type': 'text/plain' } // เลี่ยง CORS preflight
       });
