@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ลงทะเบียนเรียน ROS 2 Basic for Mobile Robot - TESR Academy</title>
+<style>
+  :root{
+    --tesr-red: #7a1418;
+    --tesr-red-light: #a3242a;
+    --tesr-gold: #d4af37;
+    --bg: #f5f1ee;
+    --card: #ffffff;
+    --text: #2a2a2a;
+    --muted: #6b6b6b;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI', 'Sarabun', sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    line-height:1.6;
+  }
+  .header{
+    background:linear-gradient(135deg, var(--tesr-red) 0%, #3a0a0c 100%);
+    color:#fff;
+    padding:32px 20px;
+    text-align:center;
+  }
+  .header h1{
+    margin:0 0 8px;
+    font-size:1.6rem;
+  }
+  .header p{
+    margin:0;
+    color:#f0d9d9;
+    font-size:0.95rem;
+  }
+  .banner{
+    width:100%;
+    max-width:760px;
+    display:block;
+    margin:0 auto;
+  }
+  .banner-wrap{
+    background:#000;
+    text-align:center;
+  }
+  .container{
+    max-width:760px;
+    margin:0 auto;
+    padding:24px 16px 80px;
+  }
+  .card{
+    background:var(--card);
+    border-radius:10px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.08);
+    padding:24px;
+    margin-bottom:20px;
+  }
+  .card h2{
+    color:var(--tesr-red);
+    border-bottom:3px solid var(--tesr-gold);
+    padding-bottom:8px;
+    font-size:1.15rem;
+    margin-top:0;
+  }
+  .schedule-day{
+    margin-bottom:14px;
+  }
+  .schedule-day h3{
+    color:var(--tesr-red-light);
+    margin-bottom:6px;
+    font-size:1rem;
+  }
+  table.sched{
+    width:100%;
+    border-collapse:collapse;
+    font-size:0.88rem;
+  }
+  table.sched td{
+    padding:5px 6px;
+    border-bottom:1px solid #eee;
+    vertical-align:top;
+  }
+  table.sched td:first-child{
+    white-space:nowrap;
+    color:var(--tesr-red);
+    font-weight:600;
+    width:130px;
+  }
+  .location-box{
+    background:#fdf6f6;
+    border-left:4px solid var(--tesr-red);
+    padding:14px 16px;
+    border-radius:6px;
+    font-size:0.92rem;
+  }
+  .location-box a{ color:var(--tesr-red-light); }
+  label{
+    display:block;
+    font-weight:600;
+    margin:18px 0 6px;
+    font-size:0.95rem;
+  }
+  label .req{ color:var(--tesr-red-light); }
+  input[type=text], input[type=tel], input[type=email], textarea{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid #ddd;
+    border-radius:6px;
+    font-size:0.95rem;
+    font-family:inherit;
+  }
+  input:focus, textarea:focus{
+    outline:none;
+    border-color:var(--tesr-red-light);
+  }
+  textarea{ min-height:80px; resize:vertical; }
+  .file-hint{ font-size:0.82rem; color:var(--muted); margin-top:4px; }
+  .pay-info{
+    background:#fff8e6;
+    border:1px solid #efd9a0;
+    padding:12px 14px;
+    border-radius:6px;
+    font-size:0.9rem;
+    margin-bottom:10px;
+  }
+  .pay-info b{ color:var(--tesr-red); }
+  button[type=submit]{
+    width:100%;
+    background:var(--tesr-red);
+    color:#fff;
+    border:none;
+    padding:14px;
+    font-size:1.05rem;
+    font-weight:600;
+    border-radius:8px;
+    cursor:pointer;
+    margin-top:24px;
+    transition:background .2s;
+  }
+  button[type=submit]:hover{ background:var(--tesr-red-light); }
+  button[type=submit]:disabled{ background:#bbb; cursor:not-allowed; }
+  #status{
+    text-align:center;
+    margin-top:14px;
+    font-weight:600;
+  }
+  .ok{ color:#1a7a32; }
+  .err{ color:#b00020; }
+  .footer-note{
+    text-align:center;
+    font-size:0.85rem;
+    color:var(--muted);
+    margin-top:10px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>แบบฟอร์มลงทะเบียนเรียน<br>ROS 2 Basic for Mobile Robot (สอนสด)</h1>
+  <p>by TESR Academy</p>
+</div>
+
+<div class="banner-wrap">
+  <img class="banner" src="banner.png" alt="ROS 2 Basic Course - TESR Academy">
+</div>
+
+<div class="container">
+
+  <div class="card">
+    <h2>กำหนดการอบรม</h2>
+    <div class="schedule-day">
+      <h3>Day 1</h3>
+      <table class="sched">
+        <tr><td>09:00 - 09:30</td><td>ติดตั้ง WSL2 ลงใน computer laptop</td></tr>
+        <tr><td>09:30 - 10:00</td><td>ติดตั้ง ROS 2 ลงใน WSL2</td></tr>
+        <tr><td>10:00 - 10:30</td><td>แนะนำ ROS 2 และ หุ่นยนต์ iron-X</td></tr>
+        <tr><td>10:30 - 10:45</td><td>พักทานอาหารว่าง 15 นาที</td></tr>
+        <tr><td>10:45 - 11:30</td><td>Linux command basic</td></tr>
+        <tr><td>11:30 - 12:00</td><td>ROS 2 basic command and ROS 2 Network Configuration</td></tr>
+        <tr><td>12:00 - 13:00</td><td>พักทานอาหารกลางวัน 60 นาที</td></tr>
+        <tr><td>13:30 - 14:30</td><td>ROS 2 Python chatter</td></tr>
+        <tr><td>14:30 - 14:45</td><td>พักทานอาหารว่าง 15 นาที</td></tr>
+        <tr><td>15:30 - 15:45</td><td>Joy stick and keyboard control ironx</td></tr>
+        <tr><td>15:45 - 16:00</td><td>iron-x SLAM part 1</td></tr>
+      </table>
+    </div>
+    <div class="schedule-day">
+      <h3>Day 2</h3>
+      <table class="sched">
+        <tr><td>09:00 - 10:00</td><td>iron-X SLAM part 2</td></tr>
+        <tr><td>10:00 - 10:30</td><td>ROS 2 with RPLIDAR C1 and IMU with digital filter</td></tr>
+        <tr><td>10:30 - 10:45</td><td>พักทานอาหารว่าง 15 นาที</td></tr>
+        <tr><td>10:45 - 12:00</td><td>iron-X Navigation</td></tr>
+        <tr><td>12:00 - 13:00</td><td>พักทานอาหารกลางวัน 60 นาที</td></tr>
+        <tr><td>13:00 - 14:30</td><td>Python code for iron-x navigation</td></tr>
+        <tr><td>14:30 - 14:45</td><td>พักทานอาหารว่าง 15 นาที</td></tr>
+        <tr><td>14:45 - 15:30</td><td>NodeRed IoT Dashboard</td></tr>
+        <tr><td>15:30 - 16:00</td><td>Q&amp;A</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>สถานที่เรียน</h2>
+    <div class="location-box">
+      <b>บริษัท ทีอีเอสอาร์ จำกัด (TESR Playground)</b><br>
+      **อยู่ด้านหลังร้าน 7-ELEVEN**<br>
+      เลขที่ 838 ถ.รัตนาธิเบศร์ ต.บางกระสอ อ.เมืองนนทบุรี จ.นนทบุรี 11000<br>
+      Tel: 082-983-7768<br>
+      Google map: <a href="https://www.tesrshop.com/map_playground" target="_blank">www.tesrshop.com/map_playground</a><br><br>
+      <b>การเดินทาง:</b><br>
+      1. รถยนต์ (จอดรถฟรี ข้างบริษัท)<br>
+      2. MRT สายสีม่วง ลงสถานี สะพานพระนั่งเกล้า (ทางออกที่ 1)<br><br>
+      กรุณาเตรียม Notebook (Window 10-11) มาด้วย<br>
+      หากต้องการสอบถามข้อมูลเพิ่มเติม ติดต่อผ่าน Line: TESR Line OA
+    </div>
+  </div>
+
+  <form class="card" id="regForm">
+    <h2>ข้อมูลผู้ลงทะเบียน</h2>
+
+    <label>ชื่อ-นามสกุล ภาษาไทย <span class="req">*</span></label>
+    <input type="text" name="name_th" required>
+
+    <label>ชื่อ-นามสกุล ภาษาอังกฤษ <span class="req">*</span></label>
+    <input type="text" name="name_en" required>
+
+    <label>เบอร์โทรติดต่อ <span class="req">*</span></label>
+    <input type="tel" name="phone" required>
+
+    <label>Email Address <span class="req">*</span></label>
+    <input type="email" name="email" required>
+
+    <label>หลักฐานการจ่าย <span class="req">*</span></label>
+    <div class="pay-info">
+      สามารถโอนเงินมาได้ที่ <b>ธนาคารกสิกรไทย (K-Bank)</b><br>
+      ชื่อบัญชี บจก. ทีอีเอสอาร์ บัญชีเลขที่ 027-3-58302-5 สาขาจามจุรี สแควร์<br><br>
+      โดยหากอยู่ในช่วง Promotion: <b>5,350 THB</b> [ยอดรวม VAT แล้ว]<br>
+      หากเกิน Promotion: <b>6,420 THB</b> [ยอดรวม VAT แล้ว]
+    </div>
+    <input type="file" name="payment_proof" id="payment_proof" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.ppt,.pptx,.xls,.xlsx" required>
+    <div class="file-hint">อัปโหลดได้ 1 ไฟล์: PDF, document, image, presentation, หรือ spreadsheet ขนาดไม่เกิน 10 MB</div>
+
+    <label>ชื่อที่อยู่ที่ต้องการให้ออกใบเสร็จรับเงิน/ใบกำกับภาษี <span class="req">*</span></label>
+    <textarea name="receipt_address" required></textarea>
+
+    <label>ท่านคาดหวังอะไรกับการเรียนในครั้งนี้</label>
+    <textarea name="expectation"></textarea>
+
+    <label>ท่านสามารถแนะนำตัวเองเพื่อทำ Networking กับเพื่อนๆในคลาสได้ อาจจะแนะนำว่าทำอาชีพอะไรอยู่ กำลังมองหาโอกาสหรือสนใจเรื่องไหนอยู่ ได้ตามอัธยาศัย</label>
+    <textarea name="networking_intro"></textarea>
+
+    <button type="submit" id="submitBtn">ส่งแบบฟอร์มลงทะเบียน</button>
+    <div id="status"></div>
+    <div class="footer-note">ข้อมูลของท่านจะถูกบันทึกลงระบบของ TESR Academy เท่านั้น</div>
+  </form>
+
+</div>
+
+<script>
+  // วาง URL ที่ได้จากการ Deploy Google Apps Script (ลงท้ายด้วย /exec) ตรงนี้
+  const SCRIPT_URL = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
+
+  const form = document.getElementById('regForm');
+  const statusEl = document.getElementById('status');
+  const submitBtn = document.getElementById('submitBtn');
+  const fileInput = document.getElementById('payment_proof');
+
+  function fileToBase64(file){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    statusEl.className = '';
+    statusEl.textContent = 'กำลังส่งข้อมูล กรุณารอสักครู่...';
+    submitBtn.disabled = true;
+
+    try{
+      const formData = new FormData(form);
+      const payload = Object.fromEntries(formData.entries());
+      delete payload.payment_proof;
+
+      const file = fileInput.files[0];
+      if(file){
+        if(file.size > 10 * 1024 * 1024){
+          throw new Error('ไฟล์ใหญ่เกิน 10 MB');
+        }
+        payload.fileName = file.name;
+        payload.fileMimeType = file.type;
+        payload.fileBase64 = await fileToBase64(file);
+      }
+
+      await fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        headers: { 'Content-Type': 'text/plain' } // เลี่ยง CORS preflight
+      });
+
+      statusEl.className = 'ok';
+      statusEl.textContent = '✓ ลงทะเบียนสำเร็จ! ขอบคุณที่สมัครเข้าร่วมอบรม';
+      form.reset();
+    }catch(err){
+      statusEl.className = 'err';
+      statusEl.textContent = '✗ เกิดข้อผิดพลาด: ' + err.message;
+    }finally{
+      submitBtn.disabled = false;
+    }
+  });
+</script>
+
+</body>
+</html>
