@@ -27,7 +27,7 @@
     content:"";
     position:fixed;
     top:0; left:0; right:0; bottom:0;
-    background-image:url('Logo_Red-No-Background.png');
+    background-image:url('logo.jpg');
     background-repeat:no-repeat;
     background-position:center;
     background-size:min(60vw, 500px);
@@ -166,6 +166,38 @@
     color:var(--muted);
     margin:6px 0 0;
   }
+  input[type=file]{
+    position:absolute;
+    width:1px; height:1px;
+    opacity:0; overflow:hidden;
+    z-index:-1;
+  }
+  .file-upload-btn{
+    display:block;
+    width:100%;
+    text-align:center;
+    background:linear-gradient(135deg, var(--tesr-gold) 0%, #b8902a 100%);
+    color:#3a2a00;
+    font-weight:700;
+    font-size:1.05rem;
+    padding:16px;
+    border-radius:10px;
+    cursor:pointer;
+    box-shadow:0 3px 10px rgba(212,175,55,0.4);
+    transition:transform .15s, box-shadow .15s;
+    margin-top:6px;
+  }
+  .file-upload-btn:hover{
+    transform:translateY(-2px);
+    box-shadow:0 5px 14px rgba(212,175,55,0.55);
+  }
+  .file-name-display{
+    text-align:center;
+    margin-top:8px;
+    font-size:0.9rem;
+    color:var(--tesr-red);
+    font-weight:600;
+  }
   button[type=submit]{
     width:100%;
     background:var(--tesr-red);
@@ -199,8 +231,8 @@
 <body>
 
 <div class="header">
-  <img class="header-logo" src="Logo_Red-No-Background.png" alt="TESR Logo">
   <h1>แบบฟอร์มลงทะเบียนเรียน<br>ROS 2 Basic for Mobile Robot (สอนสด)</h1>
+  <img class="header-logo" src="logo.jpg" alt="TESR Logo">
   <p>by TESR Academy</p>
 </div>
 
@@ -275,7 +307,7 @@
     <label>Email Address <span class="req">*</span></label>
     <input type="email" name="email" required>
 
-    <label>หลักฐานการจ่าย <span class="req">*</span></label>
+    <label>หลักฐานการจ่าย</label>
     <div class="qr-wrap">
       <img src="qrcode.jpeg" alt="TESR QR Code พร้อมเพย์ รับเงิน">
       <p>สแกนจ่ายผ่าน QR พร้อมเพย์ได้ทุกธนาคาร</p>
@@ -286,7 +318,13 @@
       โดยหากอยู่ในช่วง Promotion: <b>5,350 THB</b> [ยอดรวม VAT แล้ว]<br>
       หากเกิน Promotion: <b>6,420 THB</b> [ยอดรวม VAT แล้ว]
     </div>
+
+    <label>แนบหลักฐานการโอนเงิน <span class="req">*</span></label>
+    <label class="file-upload-btn" for="payment_proof">
+      📎 เลือกไฟล์หลักฐานการโอนเงิน
+    </label>
     <input type="file" name="payment_proof" id="payment_proof" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.ppt,.pptx,.xls,.xlsx" required>
+    <div class="file-name-display" id="fileNameDisplay">ยังไม่ได้เลือกไฟล์</div>
     <div class="file-hint">อัปโหลดได้ 1 ไฟล์: PDF, document, image, presentation, หรือ spreadsheet ขนาดไม่เกิน 10 MB</div>
 
     <label>ชื่อที่อยู่ที่ต้องการให้ออกใบเสร็จรับเงิน/ใบกำกับภาษี <span class="req">*</span></label>
@@ -313,6 +351,15 @@
   const statusEl = document.getElementById('status');
   const submitBtn = document.getElementById('submitBtn');
   const fileInput = document.getElementById('payment_proof');
+  const fileNameDisplay = document.getElementById('fileNameDisplay');
+
+  fileInput.addEventListener('change', () => {
+    if(fileInput.files.length > 0){
+      fileNameDisplay.textContent = '✓ ไฟล์ที่เลือก: ' + fileInput.files[0].name;
+    } else {
+      fileNameDisplay.textContent = 'ยังไม่ได้เลือกไฟล์';
+    }
+  });
 
   function fileToBase64(file){
     return new Promise((resolve, reject) => {
