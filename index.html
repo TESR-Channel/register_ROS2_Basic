@@ -226,6 +226,98 @@
     color:var(--muted);
     margin-top:10px;
   }
+
+  /* ── Success Modal ── */
+  .modal-overlay{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.55);
+    z-index:999;
+    align-items:center;
+    justify-content:center;
+    padding:16px;
+  }
+  .modal-overlay.show{ display:flex; }
+  .modal-box{
+    background:#fff;
+    border-radius:14px;
+    max-width:540px;
+    width:100%;
+    box-shadow:0 8px 40px rgba(0,0,0,0.25);
+    overflow:hidden;
+    animation:modalIn .25s ease;
+  }
+  @keyframes modalIn{
+    from{ transform:translateY(30px); opacity:0; }
+    to  { transform:translateY(0);    opacity:1; }
+  }
+  .modal-header{
+    background:linear-gradient(135deg, var(--tesr-red) 0%, #3a0a0c 100%);
+    color:#fff;
+    padding:20px 24px;
+    text-align:center;
+  }
+  .modal-header .check-icon{
+    font-size:2.4rem;
+    display:block;
+    margin-bottom:6px;
+  }
+  .modal-header h2{
+    margin:0;
+    font-size:1.15rem;
+  }
+  .modal-body{
+    padding:22px 24px;
+    font-size:0.93rem;
+    line-height:1.75;
+    color:var(--text);
+  }
+  .modal-body .intro{
+    background:#fdf6f6;
+    border-left:4px solid var(--tesr-red);
+    padding:10px 14px;
+    border-radius:6px;
+    margin-bottom:16px;
+    font-size:0.9rem;
+    color:#5a1010;
+  }
+  .modal-steps ol{
+    padding-left:20px;
+    margin:0;
+  }
+  .modal-steps li{
+    margin-bottom:10px;
+  }
+  .modal-steps a{
+    color:var(--tesr-red-light);
+    word-break:break-all;
+  }
+  .modal-vdo{
+    margin-top:14px;
+    background:#fff8e6;
+    border:1px solid #efd9a0;
+    border-radius:6px;
+    padding:10px 14px;
+    font-size:0.9rem;
+  }
+  .modal-vdo a{ color:var(--tesr-red-light); }
+  .modal-footer{
+    padding:0 24px 22px;
+    text-align:center;
+  }
+  .modal-close-btn{
+    background:var(--tesr-red);
+    color:#fff;
+    border:none;
+    padding:12px 40px;
+    font-size:1rem;
+    font-weight:600;
+    border-radius:8px;
+    cursor:pointer;
+    transition:background .2s;
+  }
+  .modal-close-btn:hover{ background:var(--tesr-red-light); }
 </style>
 </head>
 <body>
@@ -343,6 +435,46 @@
 
 </div>
 
+<!-- ── Success Modal ── -->
+<div class="modal-overlay" id="successModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="check-icon">✅</span>
+      <h2>ลงทะเบียนสำเร็จแล้ว!</h2>
+    </div>
+    <div class="modal-body">
+      <div class="intro">
+        ขอบคุณที่สมัครเข้าร่วมอบรม ROS 2 Basic for Mobile Robot<br>
+        ท่านจะได้รับสิทธิ์เรียน <b>Online Course</b> ฟรีด้วย!
+      </div>
+      <div class="modal-steps">
+        <b>ขั้นตอนการเข้าเรียน Online:</b>
+        <ol>
+          <li>
+            เข้าไปที่ <a href="https://www.tesracademy.com" target="_blank">https://www.tesracademy.com</a>
+          </li>
+          <li>
+            ทำการ <b>Sign Up</b> สำหรับการเข้าครั้งแรก และ <b>Sign In</b> ให้เรียบร้อย<br>
+            จากนั้นเข้าไปที่ link course เรียน:<br>
+            <a href="https://www.tesracademy.com/slides/oc00012-oc00014-ros-2-basic-for-mobile-robot-iron-x-by-tesr-academy-8" target="_blank">
+              https://www.tesracademy.com/slides/oc00012-oc00014-ros-2-basic-for-mobile-robot-iron-x-by-tesr-academy-8
+            </a>
+          </li>
+          <li>กดปุ่ม <b>Request Enroll</b></li>
+          <li>รอการ <b>Approve</b> จาก Admin ก็สามารถเริ่มเรียนได้เลยครับ</li>
+        </ol>
+      </div>
+      <div class="modal-vdo">
+        🎬 <b>VDO แสดงขั้นตอนการลงทะเบียนเรียน:</b><br>
+        <a href="https://youtu.be/JPzUCaTuxXQ" target="_blank">https://youtu.be/JPzUCaTuxXQ</a>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-close-btn" id="modalCloseBtn">รับทราบ ปิดหน้าต่างนี้</button>
+    </div>
+  </div>
+</div>
+
 <script>
   // วาง URL ที่ได้จากการ Deploy Google Apps Script (ลงท้ายด้วย /exec) ตรงนี้
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyknwHoqlyoIqXC7ZRvB_HCI3vyb8xwClZA57PhVg6SoSqr6QtbI2gRK7JlXY5sI0-4/exec";
@@ -400,6 +532,7 @@
 
       statusEl.className = 'ok';
       statusEl.textContent = '✓ ลงทะเบียนสำเร็จ! ขอบคุณที่สมัครเข้าร่วมอบรม';
+      document.getElementById('successModal').classList.add('show');
       form.reset();
     }catch(err){
       statusEl.className = 'err';
@@ -407,6 +540,9 @@
     }finally{
       submitBtn.disabled = false;
     }
+  });
+  document.getElementById('modalCloseBtn').addEventListener('click', () => {
+    document.getElementById('successModal').classList.remove('show');
   });
 </script>
 
