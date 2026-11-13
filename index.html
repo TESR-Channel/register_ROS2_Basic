@@ -384,8 +384,105 @@
   .lb-video iframe{ width:100%; height:100%; border:0; border-radius:8px; }
   .lightbox.video .lb-prev, .lightbox.video .lb-next{ display:none; }
 </style>
+<!-- ── TESR Mission Control theme (matches tesracademy.com) ── -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500&family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
+<style id="tsx-theme">
+  :root{
+    --tesr-red:#8B0000; --tesr-red-light:#B3121B; --tesr-gold:#C9A84C;
+    --bg:#000; --text:#EDEBE6; --muted:#9AA0AC;
+    --tsx-line:rgba(201,168,76,.22);
+    --tsx-head:"Chakra Petch",sans-serif; --tsx-num:"Unbounded","Chakra Petch",sans-serif;
+  }
+  html{ background:#000; }
+  body{ background:#000; color:var(--text); font-family:"IBM Plex Sans Thai",sans-serif; line-height:1.75; }
+  body::before{ display:none; }
+  #tsx-bg{ position:fixed; inset:0; width:100%; height:100%; z-index:0; pointer-events:none; display:block; }
+  .tsx-glow{ position:fixed; inset:0; z-index:0; pointer-events:none;
+    background:radial-gradient(ellipse 60% 45% at 85% 0%, rgba(139,0,0,.38), transparent 70%),
+               radial-gradient(ellipse 70% 40% at 10% 100%, rgba(139,0,0,.22), transparent 70%); }
+  .header, .banner-wrap, .container{ position:relative; z-index:1; }
+
+  /* header */
+  .header{ background:transparent; padding:44px 20px 30px; border-bottom:1px solid var(--tsx-line); }
+  .header h1{ font-family:var(--tsx-head); font-weight:700; font-size:clamp(1.5rem,1.1rem + 2vw,2.3rem); line-height:1.3; color:#fff; margin:0 0 14px; }
+  .header-logo{ width:72px; height:72px; filter:drop-shadow(0 0 18px rgba(201,168,76,.45)); animation:tsxFloat 6s ease-in-out infinite; }
+  .header p{ color:var(--tesr-gold); font-family:var(--tsx-head); font-weight:500; letter-spacing:.02em; }
+  .banner-wrap{ background:transparent; padding:28px 16px 0; }
+  .banner{ border:1px solid var(--tsx-line); box-shadow:0 24px 60px rgba(139,0,0,.35); }
+
+  /* cards */
+  .card{ background:rgba(255,255,255,.035); border:1px solid rgba(201,168,76,.18); border-radius:0;
+    clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,0 100%);
+    box-shadow:none; -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); padding:28px 24px; }
+  .card h2{ font-family:var(--tsx-head); font-weight:700; color:#fff; font-size:1.35rem; border-bottom:1px solid var(--tsx-line); padding-bottom:12px; position:relative; }
+  .card h2::after{ content:""; position:absolute; left:0; bottom:-1px; width:56px; height:2px; background:var(--tesr-gold); }
+  .schedule-day h3{ font-family:var(--tsx-head); color:var(--tesr-gold); font-size:1.05rem; }
+  table.sched td{ border-bottom:1px solid rgba(237,235,230,.08); color:rgba(237,235,230,.88); padding:7px 6px; }
+  table.sched td:first-child{ color:var(--tesr-gold); font-family:var(--tsx-num); font-weight:500; font-size:.78rem; letter-spacing:.02em; padding-top:9px; }
+  .location-box{ background:rgba(139,0,0,.16); border-left:3px solid var(--tesr-red-light); border-radius:0; color:rgba(237,235,230,.9); }
+  .location-box b{ color:#fff; }
+  .location-box a, .modal-steps a, .modal-vdo a{ color:var(--tesr-gold); }
+  .venue-title{ color:var(--tesr-gold); font-family:var(--tsx-head); }
+  .venue-thumb{ background:#111; border-radius:0; }
+  .venue-hint{ color:var(--muted); }
+  .venue-video{ background:rgba(201,168,76,.07); border:1px solid rgba(201,168,76,.3); border-radius:0; color:var(--text); }
+  .venue-video:hover{ background:rgba(201,168,76,.14); }
+  .vv-text b{ color:#fff; font-family:var(--tsx-head); }
+  .vv-text span{ color:var(--muted); }
+
+  /* form */
+  label{ color:#fff; font-weight:500; }
+  label .req{ color:#ff6b6b; }
+  input[type=text], input[type=tel], input[type=email], textarea{
+    background:rgba(255,255,255,.05); border:1px solid rgba(237,235,230,.16); border-radius:0; color:#fff; padding:12px 14px;
+    transition:border-color .2s, box-shadow .2s, background-color .2s; }
+  input:focus, textarea:focus{ border-color:var(--tesr-gold); background:rgba(255,255,255,.08); box-shadow:0 0 0 3px rgba(201,168,76,.18); }
+  .file-hint, .footer-note{ color:var(--muted); }
+  .pay-info{ background:rgba(201,168,76,.08); border:1px solid rgba(201,168,76,.3); border-radius:0; color:rgba(237,235,230,.9); }
+  .pay-info b{ color:var(--tesr-gold); }
+  .qr-wrap img{ border-radius:4px; box-shadow:0 0 0 6px #fff, 0 18px 50px rgba(201,168,76,.25); }
+  .qr-wrap p{ color:var(--muted); }
+  .file-upload-btn{ background:transparent; color:var(--tesr-gold); border:1px dashed rgba(201,168,76,.6); border-radius:0; box-shadow:none; font-family:var(--tsx-head); font-weight:600; }
+  .file-upload-btn:hover{ background:rgba(201,168,76,.1); box-shadow:none; transform:none; }
+  .file-name-display{ color:var(--tesr-gold); }
+  button[type=submit], .modal-close-btn{
+    background:var(--tesr-gold); color:#000; font-family:var(--tsx-head); font-weight:700; font-size:1.1rem; border-radius:0; padding:16px;
+    clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px));
+    position:relative; overflow:hidden; }
+  button[type=submit]:hover, .modal-close-btn:hover{ background:#E0C26A; }
+  button[type=submit]::after{ content:""; position:absolute; inset:0; background:linear-gradient(110deg,transparent 35%,rgba(255,255,255,.55) 50%,transparent 65%); transform:translateX(-120%); transition:transform .7s cubic-bezier(.7,0,.2,1); }
+  button[type=submit]:hover::after{ transform:translateX(120%); }
+  button[type=submit]:disabled{ background:#3a3a3a; color:#888; }
+  .ok{ color:#7ee2a0; } .err{ color:#ff7b7b; }
+
+  /* success modal */
+  .modal-overlay{ background:rgba(0,0,0,.78); -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px); }
+  .modal-box{ background:#000; border:1px solid rgba(201,168,76,.35); border-radius:0; box-shadow:0 30px 80px rgba(139,0,0,.45); }
+  .modal-header{ background:linear-gradient(140deg,#140000,var(--tesr-red)); border-bottom:2px solid var(--tesr-gold); }
+  .modal-header h2{ font-family:var(--tsx-head); font-size:1.35rem; }
+  .modal-body{ color:var(--text); }
+  .modal-body .intro{ background:rgba(139,0,0,.18); border-left:3px solid var(--tesr-red-light); border-radius:0; color:#fff; }
+  .modal-vdo{ background:rgba(201,168,76,.08); border:1px solid rgba(201,168,76,.3); border-radius:0; }
+  .modal-close-btn{ width:auto; padding:13px 40px; font-size:1rem; }
+
+  /* one gentle reveal */
+  .tsx-js .card{ opacity:0; transform:translateY(22px); transition:opacity .8s ease, transform .9s cubic-bezier(.2,.7,.2,1); }
+  .tsx-js .card.is-in{ opacity:1; transform:none; }
+  @keyframes tsxFloat{ 50%{ transform:translateY(-6px); } }
+  @media (prefers-reduced-motion:reduce){
+    .header-logo{ animation:none; }
+    .tsx-js .card{ opacity:1; transform:none; transition:none; }
+  }
+  button:focus-visible, .file-upload-btn:focus-within{ outline:2px solid var(--tesr-gold); outline-offset:3px; }
+</style>
+
 </head>
 <body>
+<canvas id="tsx-bg" aria-hidden="true"></canvas>
+<div class="tsx-glow" aria-hidden="true"></div>
+
 
 <div class="header">
   <h1>แบบฟอร์มลงทะเบียนเรียน<br>ROS 2 Basic for Mobile Robot (สอนสด)</h1>
@@ -696,6 +793,48 @@
       if (Math.abs(dx) > 50) show(cur + (dx < 0 ? 1 : -1));
       startX = null;
     });
+  })();
+</script>
+
+
+<script>
+  // ── TESR theme: slow starfield + one-time card reveal ──
+  (() => {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const cv = document.getElementById('tsx-bg');
+    if (cv) {
+      const ctx = cv.getContext('2d');
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      let w = 0, h = 0, stars = [], mx = 0, my = 0, tx = 0, ty = 0;
+      const COLORS = ['237,235,230', '237,235,230', '237,235,230', '237,235,230', '201,168,76'];
+      const make = () => ({ x: Math.random() * w, y: Math.random() * h, r: Math.random() * 1.2 + 0.3,
+        d: Math.random() * 0.6 + 0.2, a: Math.random() * Math.PI * 2, c: COLORS[(Math.random() * COLORS.length) | 0] });
+      const size = () => {
+        w = innerWidth; h = innerHeight; cv.width = w * dpr; cv.height = h * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        stars = Array.from({ length: Math.round(Math.min(170, w * h / 6500)) }, make);
+      };
+      const draw = (t) => {
+        ctx.clearRect(0, 0, w, h);
+        mx += (tx - mx) * 0.03; my += (ty - my) * 0.03;
+        for (const s of stars) {
+          if (!reduce) { s.y -= s.d * 0.12; if (s.y < -4) { s.y = h + 4; s.x = Math.random() * w; } }
+          const tw = reduce ? 0.7 : 0.45 + 0.55 * Math.abs(Math.sin(t / 1600 * s.d + s.a));
+          ctx.fillStyle = `rgba(${s.c},${(tw * (0.35 + s.d * 0.6)).toFixed(3)})`;
+          ctx.beginPath(); ctx.arc(s.x - mx * 14 * s.d, s.y - my * 14 * s.d, s.r, 0, Math.PI * 2); ctx.fill();
+        }
+      };
+      size(); addEventListener('resize', size);
+      addEventListener('pointermove', (e) => { tx = e.clientX / w - 0.5; ty = e.clientY / h - 0.5; });
+      if (reduce) { draw(0); }
+      else { const loop = (t) => { if (!document.hidden) draw(t); requestAnimationFrame(loop); }; requestAnimationFrame(loop); }
+    }
+    if (!reduce && 'IntersectionObserver' in window) {
+      document.documentElement.classList.add('tsx-js');
+      const io = new IntersectionObserver((es) => es.forEach((e) => {
+        if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); }
+      }), { threshold: 0.08 });
+      document.querySelectorAll('.card').forEach((c) => io.observe(c));
+    }
   })();
 </script>
 
