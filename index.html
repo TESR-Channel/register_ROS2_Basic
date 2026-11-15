@@ -396,7 +396,7 @@
 <!-- ── TESR Mission Control theme (matches tesracademy.com) ── -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500&family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500&family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
 <style id="tsx-theme">
   :root{
     --tesr-red:#8B0000; --tesr-red-light:#B3121B; --tesr-gold:#C9A84C;
@@ -487,6 +487,8 @@
   button:focus-visible, .file-upload-btn:focus-within{ outline:2px solid var(--tesr-gold); outline-offset:3px; }
 </style>
 
+<link rel="stylesheet" href="assets/invite.css">
+<style>html{scroll-behavior:smooth} #regForm,#invite{scroll-margin-top:16px} @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}</style>
 </head>
 <body>
 <canvas id="tsx-bg" aria-hidden="true"></canvas>
@@ -504,6 +506,21 @@
 </div>
 
 <div class="container">
+
+  <section class="card fit-card" id="fit">
+    <h2>คอร์สนี้เหมาะกับคุณไหม</h2>
+    <p class="fit-lead">สอนสด 2 วัน เริ่ม ROS 2 ตั้งแต่ติดตั้ง จนสั่งหุ่นยนต์ iron-x สร้างแผนที่และวิ่งอัตโนมัติได้เอง</p>
+    <ul class="fit-chips"><li>สอนสด 2 วัน</li><li>ฝึกกับหุ่นยนต์ iron-x จริง</li><li>ฟรี Online Course 37 บทเรียน</li></ul>
+    <div class="fit-grid">
+      <div class="fit-col"><h3>เรียนจบแล้วทำได้</h3><ul><li>ติดตั้ง ROS 2 บน Windows ผ่าน WSL2 และใช้คำสั่ง Linux กับคำสั่ง ROS 2 พื้นฐานได้</li><li>ตั้งค่าเครือข่าย ROS 2 และควบคุมหุ่นยนต์ iron-x ด้วย Joystick หรือคีย์บอร์ด</li><li>สร้างแผนที่ด้วย SLAM และสั่งหุ่นยนต์เดินทางอัตโนมัติด้วย Navigation</li><li>อ่านข้อมูล LiDAR และ IMU เขียน Python สั่งงาน Navigation และทำ Dashboard ด้วย Node-RED</li></ul></div>
+      <div class="fit-col"><h3>เหมาะกับ</h3><ul><li>นักศึกษา วิศวกร และผู้สอน ที่อยากเริ่ม ROS 2 กับหุ่นยนต์จริง</li><li>ผู้ที่มีหรือกำลังจะใช้หุ่นยนต์ iron-x หรือ AMR ในงาน</li><li>ไม่จำเป็นต้องมีพื้นฐาน ROS มาก่อน</li></ul></div>
+      <div class="fit-col"><h3>ต้องเตรียม</h3><ul><li>Notebook Windows 10 หรือ 11 จำนวน 1 เครื่อง</li><li>ได้สิทธิ์เรียน Online Course ROS 2 Basic ฟรี (37 บทเรียน ประมาณ 6.2 ชั่วโมง ทั้งเวอร์ชัน Humble และ Jazzy)</li></ul></div>
+    </div>
+    <div class="fit-buy">
+      <div class="fit-price">ช่วงโปรโมชั่น <b>5,350</b> บาท &nbsp;<s>ปกติ 6,420 บาท</s><small>ราคารวม VAT แล้ว ออกใบกำกับภาษีได้</small></div>
+      <div class="fit-cta"><a class="tsx-btn solid" href="#regForm">ลงทะเบียนเรียน</a><a class="tsx-btn ghost" href="#invite">ขอหนังสือเชิญ (PDF)</a></div>
+    </div>
+  </section>
 
   <div class="card">
     <h2>กำหนดการอบรม</h2>
@@ -570,6 +587,8 @@
       <div class="venue-hint">แตะที่ภาพเพื่อดูขนาดใหญ่</div>
     </div>
   </div>
+
+  <section class="card invite-card" id="invite"></section>
 
   <form class="card" id="regForm">
     <h2>ข้อมูลผู้ลงทะเบียน</h2>
@@ -847,5 +866,33 @@
   })();
 </script>
 
+<script>window.TESR_COURSE = {
+ "code": "ROS2",
+ "short": "ROS2_Basic",
+ "name": "ROS 2 Basic for Mobile Robot (iron-x)",
+ "days": 2,
+ "time": "09.00–16.00 น.",
+ "price": 6420,
+ "promo": 5350,
+ "regUrl": "tesr-channel.github.io/register_ROS2_Basic",
+ "format": "อบรมสอนสด (Onsite) บรรยายร่วมกับฝึกปฏิบัติกับหุ่นยนต์ iron-x จริง",
+ "letterIntro": "ด้วยปัจจุบันหุ่นยนต์เคลื่อนที่อัตโนมัติ (AMR) และ ROS 2 ถูกนำมาใช้ในโรงงาน คลังสินค้า สถานศึกษา และงานวิจัยอย่างแพร่หลาย บริษัท ทีอีเอสอาร์ จำกัด โดย TESR Academy จึงจัดอบรมหลักสูตร ROS 2 Basic for Mobile Robot แบบสอนสดและฝึกปฏิบัติกับหุ่นยนต์ iron-x จริง ครอบคลุมการติดตั้ง ROS 2 การควบคุมหุ่นยนต์ การสร้างแผนที่ด้วย SLAM และระบบนำทางอัตโนมัติ (Navigation)",
+ "outcomes": [
+  "ติดตั้ง ROS 2 บน Windows ผ่าน WSL2 และใช้คำสั่ง Linux กับคำสั่ง ROS 2 พื้นฐานได้",
+  "ตั้งค่าเครือข่าย ROS 2 และควบคุมหุ่นยนต์ iron-x ด้วย Joystick หรือคีย์บอร์ด",
+  "สร้างแผนที่ด้วย SLAM และสั่งหุ่นยนต์เดินทางอัตโนมัติด้วย Navigation",
+  "อ่านข้อมูล LiDAR และ IMU เขียน Python สั่งงาน Navigation และทำ Dashboard ด้วย Node-RED"
+ ],
+ "audience": [
+  "นักศึกษา วิศวกร และผู้สอน ที่อยากเริ่ม ROS 2 กับหุ่นยนต์จริง",
+  "ผู้ที่มีหรือกำลังจะใช้หุ่นยนต์ iron-x หรือ AMR ในงาน",
+  "ไม่จำเป็นต้องมีพื้นฐาน ROS มาก่อน"
+ ],
+ "prep": [
+  "Notebook Windows 10 หรือ 11 จำนวน 1 เครื่อง"
+ ],
+ "bonus": "สิทธิ์เรียน Online Course ROS 2 Basic ที่ www.tesracademy.com ฟรี (37 บทเรียน ประมาณ 6.2 ชั่วโมง ทั้งเวอร์ชัน Humble และ Jazzy)"
+};</script>
+<script src="assets/invite.js"></script>
 </body>
 </html>
