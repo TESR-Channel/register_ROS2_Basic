@@ -75,7 +75,7 @@
 .ivp-sign{ margin-left:auto; width:300px; text-align:center; margin-top:18px; position:relative; }
 .ivp-sigbox{ height:86px; position:relative; display:flex; align-items:flex-end; justify-content:center; }
 .ivp-sigbox .sig{ max-height:78px; max-width:220px; position:relative; z-index:2; }
-.ivp-sigbox .seal{ position:absolute; left:-4px; top:-16px; width:92px; opacity:.9; z-index:1; transform:rotate(-6deg); }
+.ivp-sigbox .seal{ position:absolute; left:-150px; top:-6px; width:96px; opacity:.92; z-index:1; transform:rotate(-4deg); }
 .ivp-sigline{ letter-spacing:0; color:#555; }
 .ivp-foot{ position:absolute; left:86px; right:72px; bottom:26px; border-top:1px solid #C9A84C; padding-top:7px; display:flex; justify-content:space-between; gap:16px; font-size:11px; line-height:1.45; color:#444; }
 .ivp-foot b{ color:#8B0000; font-weight:600; }
@@ -118,3 +118,24 @@
 .line-btn svg{ width:20px; height:20px; }
 .container{ padding-bottom:110px; }
 @keyframes lfHide{ to{ opacity:0; visibility:hidden; transform:translateX(10px); } }
+
+/* ---------- Group registration ---------- */
+.att-lead{ color:#F5F3EE; margin:0 0 12px; }
+.att-list{ display:flex; flex-direction:column; gap:14px; }
+fieldset.att{ position:relative; margin:0; border:1px solid rgba(201,168,76,.35); background:rgba(0,0,0,.45); padding:6px 16px 16px; min-width:0; }
+fieldset.att legend{ font-family:var(--tsx-head); font-weight:700; color:var(--tesr-gold); padding:0 8px; font-size:1.02rem; }
+fieldset.att legend small{ color:#D5D8DE; font-weight:500; }
+fieldset.att label small.opt{ color:#C9CDD4; font-weight:400; font-size:.85rem; }
+.att-del{ position:absolute; top:8px; right:10px; background:transparent; border:1px solid rgba(255,123,123,.6); color:#ff9d9d; font:600 .85rem var(--tsx-head); padding:3px 12px; cursor:pointer; }
+.att-del:hover{ background:rgba(255,123,123,.12); }
+.att-add{ width:100%; margin:12px 0 4px; padding:13px; background:rgba(201,168,76,.06); border:1px dashed rgba(201,168,76,.7); color:var(--tesr-gold); font:700 1.02rem var(--tsx-head); cursor:pointer; }
+.att-add:hover{ background:rgba(201,168,76,.14); }
+.att-add[hidden]{ display:none; }
+.pay-total{ margin:14px 0 6px; padding:14px 16px; background:rgba(139,0,0,.24); border-left:3px solid var(--tesr-gold); color:#F5F3EE; }
+.pay-total .pt-head{ font-family:var(--tsx-head); font-weight:700; color:#fff; margin-bottom:6px; }
+.pay-total .pt-head b{ color:var(--tesr-gold); }
+.pay-total .pt-row{ display:flex; justify-content:space-between; gap:12px; align-items:baseline; }
+.pay-total .pt-row b{ font-family:var(--tsx-num); font-weight:500; font-size:1.25rem; color:#fff; white-space:nowrap; }
+.pay-total .pt-row.muted{ color:#D5D8DE; }
+.pay-total .pt-row.muted b{ font-size:1rem; color:#E6E8EC; }
+.pay-total .pt-note{ font-size:.85rem; color:#D5D8DE; margin-top:6px; }

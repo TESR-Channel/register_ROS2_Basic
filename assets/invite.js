@@ -74,13 +74,14 @@
 
   var want = $('#invWant'), fields = $('#invFields'), st = $('#invStart'), en = $('#invEnd'), iss = $('#invIssue'), go = $('#invGo'), status = $('#invStatus');
   iss.value = toInput(new Date());
-  want.addEventListener('change', function () { fields.hidden = !want.checked; if (want.checked) $('#invTo').focus(); });
+  function prefillNames() { var ta = $('#invNames'); if (!ta.value.trim() && window.TESR_ATTENDEES) { var ns = window.TESR_ATTENDEES(); if (ns.length) ta.value = ns.join('\n'); } }
+  want.addEventListener('change', function () { fields.hidden = !want.checked; if (want.checked) { prefillNames(); $('#invTo').focus(); } });
   st.addEventListener('change', function () {
     var p = parseD(st.value); if (!p) return;
     var d = new Date(p.y, p.m, p.d + (C.days - 1)); en.value = toInput(d);
   });
   document.querySelectorAll('a[href="#invite"]').forEach(function (a) {
-    a.addEventListener('click', function () { want.checked = true; fields.hidden = false; setTimeout(function () { $('#invTo').focus({ preventScroll: true }); }, 400); });
+    a.addEventListener('click', function () { want.checked = true; fields.hidden = false; prefillNames(); setTimeout(function () { $('#invTo').focus({ preventScroll: true }); }, 400); });
   });
 
   /* ---------------- data ---------------- */
