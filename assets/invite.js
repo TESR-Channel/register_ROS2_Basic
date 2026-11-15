@@ -13,7 +13,8 @@
     tax: '0105560083185',
     venueName: 'TESR Playground (ด้านหลังร้าน <span class="nw">7-Eleven</span>)',
     venueAddr: '838 ถนนรัตนาธิเบศร์ ตำบลบางกระสอ อำเภอเมืองนนทบุรี จังหวัดนนทบุรี 11000',
-    tel: '<span class="nw">090-465-6519</span>',
+    tel: '<span class="nw">082-983-7768</span> หรือ <span class="nw">090-465-6519</span>',
+    telMain: '<span class="nw">082-983-7768</span>',
     line: '<span class="nw">www.tesrshop.com/line</span>',
     map: '<span class="nw">www.tesrshop.com/map_playground</span>',
     web: '<span class="nw">www.tesracademy.com</span>',
@@ -115,11 +116,11 @@
   function head() {
     return '<div class="ivp-head"><img src="assets/tesr-logo-letter.png" alt="">' +
       '<div class="ivp-co"><b>' + CO.th + '</b><span>' + CO.en + '</span>' +
-      '<span>' + CO.addr + '</span><span>เลขประจำตัวผู้เสียภาษี ' + CO.tax + ' &nbsp; โทร ' + CO.tel + ' &nbsp; <em>TESR Academy</em> ' + CO.web + '</span></div></div>';
+      '<span>' + CO.addr + '</span><span>เลขประจำตัวผู้เสียภาษี ' + CO.tax + ' &nbsp; โทร ' + CO.telMain + ', <span class="nw">090-465-6519</span></span><span><em>TESR Academy</em> ' + CO.web + '</span></div></div>';
   }
   function foot(no, page, total) {
     return '<div class="ivp-foot"><div><b>TESR Academy</b> สถานที่อบรม ' + CO.venueName + ' ' + CO.venueAddr +
-      '<br>สอบถาม โทร ' + CO.tel + ' &nbsp; LINE ' + CO.line + ' &nbsp; ตรวจสอบหนังสือเลขที่ ' + esc(no) + ' ได้ที่ช่องทางนี้</div>' +
+      '<br>สอบถาม โทร ' + CO.tel + ' &nbsp; LINE ' + CO.line + '<br>ตรวจสอบหนังสือ <span class="nw">เลขที่ ' + esc(no) + '</span> ได้ที่ช่องทางข้างต้น</div>' +
       '<div style="white-space:nowrap;text-align:right">หน้า ' + page + '/' + total + '</div></div>';
   }
   function buildPages(d) {
