@@ -75,7 +75,7 @@
 .ivp-sign{ margin-left:auto; width:300px; text-align:center; margin-top:18px; position:relative; }
 .ivp-sigbox{ height:86px; position:relative; display:flex; align-items:flex-end; justify-content:center; }
 .ivp-sigbox .sig{ max-height:78px; max-width:220px; position:relative; z-index:2; }
-.ivp-sigbox .seal{ position:absolute; left:-18px; top:-20px; width:112px; opacity:.92; z-index:1; }
+.ivp-sigbox .seal{ position:absolute; left:-4px; top:-16px; width:92px; opacity:.9; z-index:1; transform:rotate(-6deg); }
 .ivp-sigline{ letter-spacing:0; color:#555; }
 .ivp-foot{ position:absolute; left:86px; right:72px; bottom:26px; border-top:1px solid #C9A84C; padding-top:7px; display:flex; justify-content:space-between; gap:16px; font-size:11px; line-height:1.45; color:#444; }
 .ivp-foot b{ color:#8B0000; font-weight:600; }
