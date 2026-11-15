@@ -75,7 +75,7 @@
   var want = $('#invWant'), fields = $('#invFields'), st = $('#invStart'), en = $('#invEnd'), iss = $('#invIssue'), go = $('#invGo'), status = $('#invStatus');
   iss.value = toInput(new Date());
   function prefillNames() { var ta = $('#invNames'); if (!ta.value.trim() && window.TESR_ATTENDEES) { var ns = window.TESR_ATTENDEES(); if (ns.length) ta.value = ns.join('\n'); } }
-  want.addEventListener('change', function () { fields.hidden = !want.checked; if (want.checked) { prefillNames(); $('#invTo').focus(); } });
+  want.addEventListener('change', function () { fields.hidden = !want.checked; if (want.checked) { prefillNames(); ensureLibs(); loadCss(); loadImg('assets/signature.png'); loadImg('assets/seal.png'); loadImg('assets/tesr-logo-letter.png'); $('#invTo').focus(); } });
   st.addEventListener('change', function () {
     var p = parseD(st.value); if (!p) return;
     var d = new Date(p.y, p.m, p.d + (C.days - 1)); en.value = toInput(d);
@@ -97,9 +97,27 @@
       };
     });
   }
+  // Images are embedded as data URLs so the letter renders without any further network loads (reliable on iPhone)
+  var imgCache = {};
   function loadImg(src) {
-    return new Promise(function (res) { var i = new Image(); i.onload = function () { res(i.naturalWidth ? src : null); }; i.onerror = function () { res(null); }; i.src = src + '?v=' + Date.now(); })
-      .then(function (ok) { return ok ? src : null; });
+    if (!imgCache[src]) imgCache[src] = fetch(src, { cache: 'no-cache' }).then(function (r) {
+      if (!r.ok) return null;
+      return r.blob().then(function (b) { return new Promise(function (ok) { var fr = new FileReader(); fr.onload = function () { ok(fr.result); }; fr.onerror = function () { ok(null); }; fr.readAsDataURL(b); }); });
+    }).catch(function () { return null; });
+    return imgCache[src];
+  }
+  var LOGO = 'assets/tesr-logo-letter.png';
+  // Styles are inlined into the letter iframe so html2canvas's clone has the font faces immediately
+  var cssCache;
+  function loadCss() {
+    if (!cssCache) cssCache = Promise.all([
+      fetch('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap').then(function (r) { return r.text(); }).catch(function () { return ''; }),
+      fetch('assets/invite.css').then(function (r) { return r.text(); }).catch(function () { return ''; })
+    ]);
+    return cssCache;
+  }
+  function withTimeout(p, ms, msg) {
+    return new Promise(function (ok, no) { var t = setTimeout(function () { no(new Error(msg || 'หมดเวลา')); }, ms); Promise.resolve(p).then(function (v) { clearTimeout(t); ok(v); }, function (e) { clearTimeout(t); no(e); }); });
   }
   function loadScript(src) {
     return new Promise(function (res, rej) { var s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = function () { rej(new Error('โหลดไฟล์ไม่สำเร็จ: ' + src)); }; document.head.appendChild(s); });
@@ -115,11 +133,11 @@
 
   /* ---------------- letter HTML ---------------- */
   function headMini() {
-    return '<div class="ivp-head mini"><img src="assets/tesr-logo-letter.png" alt="">' +
+    return '<div class="ivp-head mini"><img src="' + LOGO + '" alt="">' +
       '<div class="ivp-co"><b>' + CO.th + '</b><span>TESR Academy &nbsp; ' + CO.web + ' &nbsp; โทร ' + CO.telMain + '</span></div></div>';
   }
   function head() {
-    return '<div class="ivp-head"><img src="assets/tesr-logo-letter.png" alt="">' +
+    return '<div class="ivp-head"><img src="' + LOGO + '" alt="">' +
       '<div class="ivp-co"><b>' + CO.th + '</b><span>' + CO.en + '</span>' +
       '<span>' + CO.addr + '</span><span>เลขประจำตัวผู้เสียภาษี ' + CO.tax + ' &nbsp; โทร ' + CO.telMain + ', <span class="nw">090-465-6519</span></span><span><em>TESR Academy</em> ' + CO.web + '</span></div></div>';
   }
@@ -202,33 +220,63 @@
     if (ed < sd) { say('วันที่สิ้นสุดต้องไม่ก่อนวันที่เริ่มอบรม', 'err'); en.focus(); return; }
 
     go.disabled = true; say('กำลังสร้างหนังสือเชิญ...');
-    var stage;
+    var frame, t0 = Date.now();
     try {
       var r = Math.floor(1000 + Math.random() * 9000);
       var no = 'TA-' + C.code + '-' + issue.y + pad(issue.m + 1) + pad(issue.d) + '-' + r;
-      var assets = await Promise.all([loadImg('assets/signature.png'), loadImg('assets/seal.png'), ensureLibs()]);
-      if (document.fonts) { await Promise.all(['400 16px Sarabun', '600 16px Sarabun', '700 16px Sarabun'].map(function (f) { return document.fonts.load(f, 'ภาษาไทย'); })); }
-      stage = document.createElement('div'); stage.id = 'invStage';
-      stage.innerHTML = buildPages({ to: to, org: org, names: names, start: start, end: end, issue: issue, era: era, no: no, sig: assets[0], seal: assets[1] }).join('');
-      document.body.appendChild(stage);
-      await Promise.all(Array.prototype.map.call(stage.querySelectorAll('img'), function (im) { return im.complete ? 1 : new Promise(function (ok) { im.onload = im.onerror = ok; }); }));
-      if (document.fonts && document.fonts.ready) await document.fonts.ready;
+      var assets = await Promise.all([loadImg('assets/signature.png'), loadImg('assets/seal.png'), loadImg('assets/tesr-logo-letter.png'), ensureLibs()]);
+      if (assets[2]) LOGO = assets[2];
+      var css = await loadCss();
+      // Render the letter in its own small iframe, so html2canvas only clones the letter (not the whole page,
+      // its lazy images, video thumbnails and background canvas) — much faster and avoids hangs on iPhone Safari.
+      var base = location.href.replace(/[#?].*$/, '').replace(/[^\/]*$/, '');
+      var html = buildPages({ to: to, org: org, names: names, start: start, end: end, issue: issue, era: era, no: no, sig: assets[0], seal: assets[1] }).join('');
+      frame = document.createElement('iframe');
+      frame.setAttribute('aria-hidden', 'true'); frame.tabIndex = -1;
+      frame.style.cssText = 'position:fixed;left:-10000px;top:0;width:794px;height:3400px;border:0;opacity:0;pointer-events:none;';
+      var loaded = new Promise(function (ok) { frame.onload = ok; });
+      frame.srcdoc = '<!doctype html><html lang="th"><head><meta charset="utf-8"><base href="' + base + '">' +
+        '<style>' + css[0] + '</style><style>' + css[1] + '</style><style>html,body{margin:0;background:#fff}</style></head><body>' + html + '</body></html>';
+      document.body.appendChild(frame);
+      await withTimeout(loaded, 15000, 'โหลดหน้าเอกสารไม่สำเร็จ');
+      var fd = frame.contentDocument;
+      if (fd.fonts) {
+        await withTimeout(Promise.all(['400 16px Sarabun', '600 16px Sarabun', '700 16px Sarabun'].map(function (f) { return fd.fonts.load(f, 'ภาษาไทย'); })), 8000).catch(function () {});
+        await withTimeout(fd.fonts.ready, 5000).catch(function () {});
+      }
+      await Promise.all(Array.prototype.map.call(fd.images, function (im) { return im.complete ? 1 : new Promise(function (ok) { im.onload = im.onerror = ok; setTimeout(ok, 6000); }); }));
+      // html2canvas renders from a fresh clone of the document: wait until fonts and images are ready there too
+      var settle = async function (doc) {
+        if (doc.fonts) {
+          await withTimeout(Promise.all(['400 16px Sarabun', '600 16px Sarabun', '700 16px Sarabun'].map(function (f) { return doc.fonts.load(f, 'ภาษาไทย'); })), 8000).catch(function () {});
+          await withTimeout(doc.fonts.ready, 5000).catch(function () {});
+        }
+        await Promise.all(Array.prototype.map.call(doc.images, function (im) { return im.complete ? 1 : new Promise(function (ok) { im.onload = im.onerror = ok; setTimeout(ok, 6000); }); }));
+        await new Promise(function (ok) { requestAnimationFrame(function () { requestAnimationFrame(ok); }); });
+      };
       var pdf = new window.jspdf.jsPDF({ orientation: 'p', unit: 'mm', format: 'a4', compress: true });
-      var pages = stage.querySelectorAll('.ivp');
+      var pages = fd.querySelectorAll('.ivp');
+      // warm-up pass: the first html2canvas run measures text before the web font is fully in place
+      await withTimeout(window.html2canvas(fd.querySelector('.ivp-head'), { scale: 1, backgroundColor: '#ffffff', logging: false, onclone: settle }), 20000).catch(function () {});
       for (var i = 0; i < pages.length; i++) {
         say('กำลังสร้างหน้า ' + (i + 1) + '/' + pages.length + '...');
-        var cv = await window.html2canvas(pages[i], { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false, windowWidth: 794 });
+        var cv = await withTimeout(window.html2canvas(pages[i], { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false, imageTimeout: 6000, windowWidth: 794, windowHeight: 1123, scrollX: 0, scrollY: 0, onclone: settle }), 30000, 'ใช้เวลานานเกินไป');
         if (i) pdf.addPage('a4', 'p');
         pdf.addImage(cv.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
+        cv.width = cv.height = 0;
       }
       pdf.setProperties({ title: 'หนังสือเชิญเข้าร่วมอบรม ' + C.name, author: CO.th, subject: no, creator: 'TESR Academy' });
       var safeOrg = org.replace(/[\\/:*?"<>|]+/g, ' ').trim().slice(0, 60);
-      pdf.save('หนังสือเชิญ_' + C.short + '_' + safeOrg + '.pdf');
-      say('✓ สร้างหนังสือเชิญเรียบร้อย ไฟล์ถูกดาวน์โหลดแล้ว (เลขที่ ' + no + ')', 'ok');
+      var fname = 'หนังสือเชิญ_' + C.short + '_' + safeOrg + '.pdf';
+      var url = URL.createObjectURL(pdf.output('blob'));
+      pdf.save(fname);
+      status.className = 'ok';
+      status.innerHTML = '✓ สร้างหนังสือเชิญเรียบร้อย (เลขที่ ' + esc(no) + ') ใช้เวลา ' + Math.max(1, Math.round((Date.now() - t0) / 1000)) + ' วินาที<br>' +
+        'ถ้าไฟล์ไม่ดาวน์โหลดเอง <a href="' + url + '" download="' + esc(fname) + '" target="_blank" rel="noopener" class="inv-open">แตะที่นี่เพื่อเปิดไฟล์ PDF</a>';
     } catch (e) {
       say('สร้างไฟล์ไม่สำเร็จ: ' + (e && e.message ? e.message : e) + ' กรุณาลองอีกครั้ง หรือติดต่อ LINE www.tesrshop.com/line', 'err');
     } finally {
-      if (stage) stage.remove();
+      if (frame) frame.remove();
       go.disabled = false;
     }
   });
