@@ -113,6 +113,10 @@
   }
 
   /* ---------------- letter HTML ---------------- */
+  function headMini() {
+    return '<div class="ivp-head mini"><img src="assets/tesr-logo-letter.png" alt="">' +
+      '<div class="ivp-co"><b>' + CO.th + '</b><span>TESR Academy &nbsp; ' + CO.web + ' &nbsp; โทร ' + CO.telMain + '</span></div></div>';
+  }
   function head() {
     return '<div class="ivp-head"><img src="assets/tesr-logo-letter.png" alt="">' +
       '<div class="ivp-co"><b>' + CO.th + '</b><span>' + CO.en + '</span>' +
@@ -157,7 +161,7 @@
       ['ผู้เข้าอบรมต้องเตรียม', C.prep.join('<br>')],
       ['สิทธิ์เพิ่มเติม', C.bonus]
     ].concat(n ? [['ผู้เข้าอบรม', d.names.map(function (x, i) { return (i + 1) + '. ' + esc(x); }).join('<br>')]] : []);
-    var p2 = '<div class="ivp">' + head() +
+    var p2 = '<div class="ivp">' + headMini() +
       '<span class="tag" style="margin-top:18px">เอกสารแนบ</span>' +
       '<h2 style="margin-top:2px">รายละเอียดหลักสูตร ' + esc(C.name) + '</h2>' +
       '<p class="sub">จัดอบรมโดย TESR Academy ' + CO.th + '</p>' +
@@ -173,7 +177,7 @@
       return '<table class="sch"><tr><th colspan="2">' + esc(day.title) + date + '</th></tr>' +
         day.rows.map(function (r) { var brk = /พัก/.test(r[1]); return '<tr' + (brk ? ' class="brk"' : '') + '><td>' + esc(r[0]).replace(/:/g, '.') + ' น.</td><td>' + esc(r[1]) + '</td></tr>'; }).join('') + '</table>';
     }).join('');
-    var p3 = '<div class="ivp">' + head() +
+    var p3 = '<div class="ivp">' + headMini() +
       '<h2 style="margin-top:22px">กำหนดการอบรม</h2>' + schHtml +
       '<h3>การลงทะเบียนและชำระค่าอบรม</h3>' +
       '<div class="pay">ลงทะเบียนออนไลน์ที่ <b class="nw">' + esc(C.regUrl) + '</b><br>' +
