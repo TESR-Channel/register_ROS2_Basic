@@ -1,6 +1,8 @@
 /* TESR Academy — invitation letter (หนังสือเชิญ) PDF generator.
+   Draws the letter straight onto one canvas per page with the browser's own text engine (correct Thai shaping),
+   then puts each page into a PDF with jsPDF. No html2canvas / DOM cloning, so it is fast and works on iPhone.
    Course data comes from window.TESR_COURSE (set in index.html); the schedule is read from the page's .schedule-day tables.
-   Signature / company seal: put transparent PNGs at assets/signature.png and assets/seal.png — they are used automatically. */
+   Signature / company seal: transparent PNGs at assets/signature.png and assets/seal.png (used automatically if present). */
 (function () {
   'use strict';
   var C = window.TESR_COURSE;
@@ -11,13 +13,12 @@
     en: 'TESR Co., Ltd. (Thai Embedded System and Robotics)',
     addr: '112/296 หมู่บ้านเพอร์เฟค มาสเตอร์พีซ หมู่ที่ 2 ตำบลไทรม้า อำเภอเมืองนนทบุรี จังหวัดนนทบุรี 11000',
     tax: '0105560083185',
-    venueName: 'TESR Playground (ด้านหลังร้าน <span class="nw">7-Eleven</span>)',
+    venueName: 'TESR Playground (ด้านหลังร้าน 7-Eleven)',
     venueAddr: '838 ถนนรัตนาธิเบศร์ ตำบลบางกระสอ อำเภอเมืองนนทบุรี จังหวัดนนทบุรี 11000',
-    tel: '<span class="nw">082-983-7768</span> หรือ <span class="nw">090-465-6519</span>',
-    telMain: '<span class="nw">082-983-7768</span>',
-    line: '<span class="nw">www.tesrshop.com/line</span>',
-    map: '<span class="nw">www.tesrshop.com/map_playground</span>',
-    web: '<span class="nw">www.tesracademy.com</span>',
+    tel1: '082-983-7768', tel2: '090-465-6519',
+    line: 'www.tesrshop.com/line',
+    map: 'www.tesrshop.com/map_playground',
+    web: 'www.tesracademy.com',
     signer: 'นายอานนท์ หม้อสุวรรณ',
     signerTitle: 'ผู้จัดการ บริษัท ทีอีเอสอาร์ จำกัด'
   };
@@ -75,13 +76,13 @@
   var want = $('#invWant'), fields = $('#invFields'), st = $('#invStart'), en = $('#invEnd'), iss = $('#invIssue'), go = $('#invGo'), status = $('#invStatus');
   iss.value = toInput(new Date());
   function prefillNames() { var ta = $('#invNames'); if (!ta.value.trim() && window.TESR_ATTENDEES) { var ns = window.TESR_ATTENDEES(); if (ns.length) ta.value = ns.join('\n'); } }
-  want.addEventListener('change', function () { fields.hidden = !want.checked; if (want.checked) { prefillNames(); ensureLibs(); loadCss(); loadImg('assets/signature.png'); loadImg('assets/seal.png'); loadImg('assets/tesr-logo-letter.png'); $('#invTo').focus(); } });
+  want.addEventListener('change', function () { fields.hidden = !want.checked; if (want.checked) { prefillNames(); warmUp(); $('#invTo').focus(); } });
   st.addEventListener('change', function () {
     var p = parseD(st.value); if (!p) return;
     var d = new Date(p.y, p.m, p.d + (C.days - 1)); en.value = toInput(d);
   });
   document.querySelectorAll('a[href="#invite"]').forEach(function (a) {
-    a.addEventListener('click', function () { want.checked = true; fields.hidden = false; prefillNames(); setTimeout(function () { $('#invTo').focus({ preventScroll: true }); }, 400); });
+    a.addEventListener('click', function () { want.checked = true; fields.hidden = false; prefillNames(); warmUp(); setTimeout(function () { $('#invTo').focus({ preventScroll: true }); }, 400); });
   });
 
   /* ---------------- data ---------------- */
@@ -97,117 +98,262 @@
       };
     });
   }
-  // Images are embedded as data URLs so the letter renders without any further network loads (reliable on iPhone)
-  var imgCache = {};
-  function loadImg(src) {
-    if (!imgCache[src]) imgCache[src] = fetch(src, { cache: 'no-cache' }).then(function (r) {
-      if (!r.ok) return null;
-      return r.blob().then(function (b) { return new Promise(function (ok) { var fr = new FileReader(); fr.onload = function () { ok(fr.result); }; fr.onerror = function () { ok(null); }; fr.readAsDataURL(b); }); });
-    }).catch(function () { return null; });
-    return imgCache[src];
-  }
-  var LOGO = 'assets/tesr-logo-letter.png';
-  // Styles are inlined into the letter iframe so html2canvas's clone has the font faces immediately
-  var cssCache;
-  function loadCss() {
-    if (!cssCache) cssCache = Promise.all([
-      fetch('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap').then(function (r) { return r.text(); }).catch(function () { return ''; }),
-      fetch('assets/invite.css').then(function (r) { return r.text(); }).catch(function () { return ''; })
-    ]);
-    return cssCache;
-  }
+
+  /* ---------------- assets ---------------- */
   function withTimeout(p, ms, msg) {
     return new Promise(function (ok, no) { var t = setTimeout(function () { no(new Error(msg || 'หมดเวลา')); }, ms); Promise.resolve(p).then(function (v) { clearTimeout(t); ok(v); }, function (e) { clearTimeout(t); no(e); }); });
   }
-  function loadScript(src) {
-    return new Promise(function (res, rej) { var s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = function () { rej(new Error('โหลดไฟล์ไม่สำเร็จ: ' + src)); }; document.head.appendChild(s); });
+  var imgCache = {};
+  function loadImg(src) {
+    if (!imgCache[src]) imgCache[src] = new Promise(function (ok) {
+      var im = new Image(); im.onload = function () { ok(im.naturalWidth ? im : null); }; im.onerror = function () { ok(null); }; im.src = src;
+    });
+    return imgCache[src];
   }
   var libs;
   function ensureLibs() {
-    if (!libs) libs = Promise.all([
-      window.html2canvas ? 1 : loadScript('assets/vendor/html2canvas.min.js'),
-      (window.jspdf && window.jspdf.jsPDF) ? 1 : loadScript('assets/vendor/jspdf.umd.min.js')
-    ]);
+    if (!libs) libs = (window.jspdf && window.jspdf.jsPDF) ? Promise.resolve() : new Promise(function (res, rej) {
+      var s = document.createElement('script'); s.src = 'assets/vendor/jspdf.umd.min.js'; s.onload = res;
+      s.onerror = function () { libs = null; rej(new Error('โหลดไฟล์ไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ต')); }; document.head.appendChild(s);
+    });
     return libs;
   }
+  var fontsP;
+  function loadFonts() {
+    if (!fontsP) fontsP = document.fonts ? Promise.all(['400', '600', '700'].map(function (w) { return document.fonts.load(w + ' 16px "Sarabun"', 'ภาษาไทย ABC'); })).catch(function () {}) : Promise.resolve();
+    return fontsP;
+  }
+  function warmUp() { ensureLibs().catch(function () {}); loadFonts(); ['assets/tesr-logo-letter.png', 'assets/signature.png', 'assets/seal.png'].forEach(loadImg); }
 
-  /* ---------------- letter HTML ---------------- */
-  function headMini() {
-    return '<div class="ivp-head mini"><img src="' + LOGO + '" alt="">' +
-      '<div class="ivp-co"><b>' + CO.th + '</b><span>TESR Academy &nbsp; ' + CO.web + ' &nbsp; โทร ' + CO.telMain + '</span></div></div>';
+  /* ---------------- tiny layout engine (CSS px on an A4 page of 794 x 1123) ---------------- */
+  var PW = 794, PH = 1123, ML = 86, MR = 72, CW = PW - ML - MR, BOTTOM = PH - 100;
+  var RED = '#8B0000', GOLD = '#C9A84C', INK = '#111111';
+  function F(w, s) { return w + ' ' + s + 'px "Sarabun", "Thonburi", "Leelawadee UI", sans-serif'; }
+  var mctx = document.createElement('canvas').getContext('2d');
+  var SEG = (window.Intl && Intl.Segmenter) ? new Intl.Segmenter('th', { granularity: 'word' }) : null;
+  function R(t, o) { o = o || {}; o.t = String(t); return o; } // a text run: {t, w (weight), c (colour), nw (no wrap)}
+  function splitWords(t) {
+    if (SEG) return Array.from(SEG.segment(t), function (x) { return x.segment; });
+    return t.split(/(\s+)/);
   }
-  function head() {
-    return '<div class="ivp-head"><img src="' + LOGO + '" alt="">' +
-      '<div class="ivp-co"><b>' + CO.th + '</b><span>' + CO.en + '</span>' +
-      '<span>' + CO.addr + '</span><span>เลขประจำตัวผู้เสียภาษี ' + CO.tax + ' &nbsp; โทร ' + CO.telMain + ', <span class="nw">090-465-6519</span></span><span><em>TESR Academy</em> ' + CO.web + '</span></div></div>';
+  function tokens(runs) {
+    var out = [];
+    runs.forEach(function (r) {
+      if (typeof r === 'string') r = R(r);
+      var st = { w: r.w || 400, c: r.c || INK };
+      r.t.split(/(\n)/).forEach(function (part) {
+        if (part === '\n') { out.push({ br: 1 }); return; }
+        if (!part) return;
+        (r.nw ? [part] : splitWords(part)).forEach(function (t) { if (t) out.push({ t: t, st: st }); });
+      });
+    });
+    return out;
   }
-  function foot(no, page, total) {
-    return '<div class="ivp-foot"><div><b>TESR Academy</b> สถานที่อบรม ' + CO.venueName + ' ' + CO.venueAddr +
-      '<br>สอบถาม โทร ' + CO.tel + ' &nbsp; LINE ' + CO.line + '<br>ตรวจสอบหนังสือ <span class="nw">เลขที่ ' + esc(no) + '</span> ได้ที่ช่องทางข้างต้น</div>' +
-      '<div style="white-space:nowrap;text-align:right">หน้า ' + page + '/' + total + '</div></div>';
+  function measure(t, st, size) { mctx.font = F(st.w, size); return mctx.measureText(t).width; }
+  function layout(runs, width, size, indent) {
+    var toks = tokens(runs), lines = [], cur = [], cw = 0, first = true;
+    function avail() { return width - (first ? (indent || 0) : 0); }
+    function push() {
+      while (cur.length && /^\s+$/.test(cur[cur.length - 1].t)) { cw -= cur[cur.length - 1].w; cur.pop(); }
+      lines.push({ items: cur, width: cw, indent: first ? (indent || 0) : 0 }); cur = []; cw = 0; first = false;
+    }
+    toks.forEach(function (k) {
+      if (k.br) { push(); return; }
+      var sp = /^\s+$/.test(k.t);
+      if (sp && !cur.length) return;
+      var w = measure(k.t, k.st, size);
+      if (cw + w > avail() && cur.length) { push(); if (sp) return; }
+      if (w > avail()) { // a single very long token: break it by characters
+        Array.from(k.t).forEach(function (ch) {
+          var cwid = measure(ch, k.st, size);
+          if (cw + cwid > avail() && cur.length) push();
+          cur.push({ t: ch, st: k.st, w: cwid }); cw += cwid;
+        });
+        return;
+      }
+      cur.push({ t: k.t, st: k.st, w: w }); cw += w;
+    });
+    if (cur.length || !lines.length) push();
+    return lines;
   }
-  function buildPages(d) {
-    var era = d.era, range = fmtRange(d.start, d.end, era);
-    var n = d.names.length;
-    var who = n ? joinTh(d.names) + (n > 1 ? ' รวม ' + n + ' ท่าน' : '') : 'บุคลากรในหน่วยงานของท่าน';
-    var feeLine = 'อัตราค่าลงทะเบียนท่านละ ' + baht(C.price) + ' บาท (รวมภาษีมูลค่าเพิ่มแล้ว) หรือท่านละ ' + baht(C.promo) + ' บาท สำหรับการลงทะเบียนในช่วงโปรโมชั่น' +
+  function drawLine(ctx, L, x, y, size, lh) {
+    var base = y + lh / 2 + size * 0.36;
+    L.items.forEach(function (it) { ctx.font = F(it.st.w, size); ctx.fillStyle = it.st.c; ctx.fillText(it.t, x, base); x += it.w; });
+  }
+
+  function Doc(mini) { this.pages = []; this.mini = mini; }
+  Doc.prototype.newPage = function (withMini) { this.p = { ops: [] }; this.pages.push(this.p); this.y = 34; if (withMini) this.mini(this); };
+  Doc.prototype.op = function (fn) { this.p.ops.push(fn); };
+  Doc.prototype.ensure = function (h) { if (this.y + h > BOTTOM) this.newPage(true); };
+  Doc.prototype.gap = function (h) { this.y += h; };
+  Doc.prototype.flow = function (runs, o) {
+    var self = this, lines = layout(runs, o.width || CW, o.size, o.indent), lh = o.lh || o.size * 1.6, x = o.x == null ? ML : o.x, w = o.width || CW;
+    lines.forEach(function (L) {
+      self.ensure(lh);
+      var y = self.y, x0 = x + L.indent;
+      if (o.align === 'center') x0 = x + (w - L.width) / 2; else if (o.align === 'right') x0 = x + w - L.width;
+      self.op(function (ctx) { drawLine(ctx, L, x0, y, o.size, lh); });
+      self.y += lh;
+    });
+  };
+  Doc.prototype.rule = function (x1, x2, color, lw) { var y = this.y; this.op(function (ctx) { ctx.fillStyle = color; ctx.fillRect(x1, y, x2 - x1, lw); }); };
+  Doc.prototype.image = function (img, x, y, w, h, rot, alpha) {
+    if (!img) return;
+    this.op(function (ctx) {
+      ctx.save(); if (alpha != null) ctx.globalAlpha = alpha;
+      if (rot) { ctx.translate(x + w / 2, y + h / 2); ctx.rotate(rot * Math.PI / 180); ctx.drawImage(img, -w / 2, -h / 2, w, h); }
+      else ctx.drawImage(img, x, y, w, h);
+      ctx.restore();
+    });
+  };
+  // rows: [{cells:[runs...], fills:[colour|null], head:bool, span:bool}]
+  Doc.prototype.table = function (rows, o) {
+    var self = this, widths = o.widths, total = widths.reduce(function (a, b) { return a + b; }, 0);
+    rows.forEach(function (r) {
+      var ws = r.span ? [total] : widths, size = o.size, lh = o.lh;
+      var lays = r.cells.map(function (c, i) { return layout(c, ws[i] - 2 * o.padX, size, 0); });
+      var h = Math.max.apply(null, lays.map(function (l) { return l.length; })) * lh + 2 * o.padY;
+      self.ensure(h);
+      var y = self.y;
+      self.op(function (ctx) {
+        var x = o.x;
+        ws.forEach(function (cw, i) {
+          var fill = r.fills && r.fills[i];
+          if (fill) { ctx.fillStyle = fill; ctx.fillRect(x, y, cw, h); }
+          if (o.grid) { ctx.strokeStyle = o.grid; ctx.lineWidth = 1; ctx.strokeRect(x + .5, y + .5, cw, h); }
+          lays[i].forEach(function (L, k) { drawLine(ctx, L, x + o.padX, y + o.padY + k * lh, size, lh); });
+          x += cw;
+        });
+        if (o.rule && !r.head) { ctx.fillStyle = o.rule; ctx.fillRect(o.x, y + h - 1, total, 1); }
+      });
+      self.y += h;
+    });
+  };
+
+  /* ---------------- letter content ---------------- */
+  function buildDoc(d, img) {
+    var era = d.era, range = fmtRange(d.start, d.end, era), n = d.names.length;
+    var who = n > 4 ? 'บุคลากรในหน่วยงานของท่าน รวม ' + n + ' ท่าน (รายชื่อตามเอกสารแนบ)' : n ? joinTh(d.names) + (n > 1 ? ' รวม ' + n + ' ท่าน' : '') : 'บุคลากรในหน่วยงานของท่าน';
+    var feeLine = ' อัตราค่าลงทะเบียนท่านละ ' + baht(C.price) + ' บาท (รวมภาษีมูลค่าเพิ่มแล้ว) หรือท่านละ ' + baht(C.promo) + ' บาท สำหรับการลงทะเบียนในช่วงโปรโมชั่น' +
       (n > 1 ? ' (ค่าลงทะเบียนรวม ' + n + ' ท่าน ' + baht(C.price * n) + ' บาท ตามอัตราปกติ)' : '');
-    var total = 3;
-    var sigImgs = (d.seal ? '<img class="seal" src="' + d.seal + '" alt="">' : '') + (d.sig ? '<img class="sig" src="' + d.sig + '" alt="">' : '');
+    var NW = function (t, o) { o = o || {}; o.nw = true; return R(t, o); };
+    function logoSize(maxW) { var L = img.logo; return L ? { w: maxW, h: maxW * L.naturalHeight / L.naturalWidth } : { w: 0, h: 0 }; }
 
-    var p1 = '<div class="ivp">' + head() +
-      '<div class="ivp-meta"><div>ที่ ' + esc(d.no) + '</div><div class="ivp-date">' + fmt(d.issue, era) + '</div></div>' +
-      '<div class="ivp-kv"><b>เรื่อง</b><span>ขอเรียนเชิญเข้าร่วมอบรมหลักสูตร ' + esc(C.name) + '</span>' +
-      '<b>เรียน</b><span>' + esc(d.to) + ' ' + esc(d.org) + '</span>' +
-      '<b>สิ่งที่ส่งมาด้วย</b><span>รายละเอียดหลักสูตรและกำหนดการอบรม จำนวน 1 ชุด</span></div>' +
-      '<div class="ivp-body">' +
-      '<p>' + C.letterIntro + '</p>' +
-      '<p>ในการนี้ บริษัทฯ เห็นว่าหลักสูตรดังกล่าวจะเป็นประโยชน์ต่อการพัฒนาบุคลากรของ' + esc(d.org) + ' จึงขอเรียนเชิญ ' + esc(who) +
-      ' เข้าร่วมอบรมในวันที่ ' + range + ' เวลา ' + C.time + ' รวม ' + C.days + ' วัน ณ ' + CO.venueName + ' เลขที่ ' + CO.venueAddr + ' ' + feeLine +
-      ' ทั้งนี้ ผู้เข้าอบรมจะได้รับสิทธิ์เรียน Online Course ของหลักสูตรนี้ที่ ' + CO.web + ' โดยไม่มีค่าใช้จ่ายเพิ่มเติม รายละเอียดดังเอกสารที่แนบมาพร้อมนี้</p>' +
-      '<p>จึงเรียนมาเพื่อโปรดพิจารณา หากต้องการข้อมูลเพิ่มเติม กรุณาติดต่อ TESR Academy โทร ' + CO.tel + ' หรือ LINE ' + CO.line + ' ขอขอบคุณมา ณ โอกาสนี้</p>' +
-      '</div>' +
-      '<div class="ivp-sign"><div>ขอแสดงความนับถือ</div><div class="ivp-sigbox">' + (sigImgs || '<span class="ivp-sigline">..........................................................</span>') + '</div>' +
-      '<div>(' + CO.signer + ')</div><div>' + CO.signerTitle + '</div></div>' +
-      foot(d.no, 1, total) + '</div>';
+    function mini(doc) {
+      var s = logoSize(40), y = doc.y;
+      mctx.font = F(700, 16); var w1 = mctx.measureText(CO.th).width;
+      var line2 = 'TESR Academy   ' + CO.web + '   โทร ' + CO.tel1; mctx.font = F(400, 12.5); var w2 = mctx.measureText(line2).width;
+      var gw = s.w + 12 + Math.max(w1, w2), x0 = (PW - gw) / 2, tx = x0 + s.w + 12;
+      doc.image(img.logo, x0, y, s.w, s.h);
+      doc.op(function (ctx) {
+        ctx.fillStyle = INK; ctx.font = F(700, 16); ctx.fillText(CO.th, tx, y + 18);
+        ctx.fillStyle = '#333'; ctx.font = F(400, 12.5); ctx.fillText(line2, tx, y + 36);
+      });
+      doc.y = y + Math.max(s.h, 42) + 8;
+      doc.rule(ML, PW - MR, RED, 2); doc.y += 6; doc.rule(ML, PW - MR, GOLD, 1); doc.y += 14;
+    }
+    var doc = new Doc(mini);
 
+    // ---- page 1: the letter ----
+    doc.newPage(false);
+    var s = logoSize(66);
+    doc.image(img.logo, (PW - s.w) / 2, doc.y + 4, s.w, s.h); doc.y += s.h + 10;
+    doc.flow([R(CO.th, { w: 700 })], { size: 19, lh: 26, align: 'center' });
+    doc.flow([CO.en], { size: 12.5, lh: 17, align: 'center' });
+    doc.flow([CO.addr], { size: 12.5, lh: 17, align: 'center' });
+    doc.flow(['เลขประจำตัวผู้เสียภาษี ' + CO.tax + '   โทร ', NW(CO.tel1 + ', ' + CO.tel2)], { size: 12.5, lh: 17, align: 'center' });
+    doc.flow([R('TESR Academy', { w: 600, c: RED }), ' ', NW(CO.web)], { size: 12.5, lh: 17, align: 'center' });
+    doc.y += 6; doc.rule(ML, PW - MR, RED, 2); doc.y += 6; doc.rule(ML, PW - MR, GOLD, 1); doc.y += 20;
+
+    var yMeta = doc.y;
+    doc.flow(['ที่ ' + d.no], { size: 15, lh: 26 });
+    doc.y = yMeta; doc.flow([fmt(d.issue, era)], { size: 15, lh: 26, align: 'right' });
+    doc.y += 12;
+    [['เรื่อง', 'ขอเรียนเชิญเข้าร่วมอบรมหลักสูตร ' + C.name], ['เรียน', d.to + ' ' + d.org], ['สิ่งที่ส่งมาด้วย', 'รายละเอียดหลักสูตรและกำหนดการอบรม จำนวน 1 ชุด']].forEach(function (kv) {
+      var y0 = doc.y;
+      doc.flow([R(kv[0], { w: 700 })], { size: 15.5, lh: 26 });
+      doc.y = y0; doc.flow([kv[1]], { size: 15.5, lh: 26, x: ML + 100, width: CW - 100 });
+    });
+    doc.y += 14;
+    var P = { size: 15.5, lh: 26.5, indent: 50 };
+    doc.flow([C.letterIntro], P); doc.y += 8;
+    doc.flow(['ในการนี้ บริษัทฯ เห็นว่าหลักสูตรดังกล่าวจะเป็นประโยชน์ต่อการพัฒนาบุคลากรของ' + d.org + ' จึงขอเรียนเชิญ ' + who +
+      ' เข้าร่วมอบรมในวันที่ ' + range + ' เวลา ' + C.time + ' รวม ' + C.days + ' วัน ณ TESR Playground (ด้านหลังร้าน ', NW('7-Eleven'), ') เลขที่ ' + CO.venueAddr + feeLine +
+      ' ทั้งนี้ ผู้เข้าอบรมจะได้รับสิทธิ์เรียน Online Course ของหลักสูตรนี้ที่ ', NW(CO.web), ' โดยไม่มีค่าใช้จ่ายเพิ่มเติม รายละเอียดดังเอกสารที่แนบมาพร้อมนี้'], P);
+    doc.y += 8;
+    doc.flow(['จึงเรียนมาเพื่อโปรดพิจารณา หากต้องการข้อมูลเพิ่มเติม กรุณาติดต่อ TESR Academy โทร ', NW(CO.tel1), ' หรือ ', NW(CO.tel2), ' หรือ LINE ', NW(CO.line), ' ขอขอบคุณมา ณ โอกาสนี้'], P);
+    // signature block (300px wide, right aligned); the seal sits in the blank space to its left
+    doc.ensure(190);
+    doc.y += 18;
+    var sx = PW - MR - 300;
+    doc.flow(['ขอแสดงความนับถือ'], { size: 15.5, lh: 26, x: sx, width: 300, align: 'center' });
+    var by = doc.y;
+    if (img.sig) { var sw = Math.min(220, 78 * img.sig.naturalWidth / img.sig.naturalHeight), sh = sw * img.sig.naturalHeight / img.sig.naturalWidth; doc.image(img.sig, sx + (300 - sw) / 2, by + 86 - sh, sw, sh); }
+    else doc.op(function (ctx) { ctx.fillStyle = '#555'; ctx.font = F(400, 15.5); ctx.textAlign = 'center'; ctx.fillText('..........................................................', sx + 150, by + 78); ctx.textAlign = 'left'; });
+    if (img.seal) { var kw = 96, kh = kw * img.seal.naturalHeight / img.seal.naturalWidth; doc.image(img.seal, sx - 150, by - 6, kw, kh, -4, 0.92); }
+    doc.y = by + 90;
+    doc.flow(['(' + CO.signer + ')'], { size: 15.5, lh: 26, x: sx, width: 300, align: 'center' });
+    doc.flow([CO.signerTitle], { size: 15.5, lh: 26, x: sx, width: 300, align: 'center' });
+
+    // ---- page 2: course details ----
+    doc.newPage(true);
+    doc.op((function (y) { return function (ctx) { ctx.fillStyle = RED; ctx.fillRect(ML, y, 74, 22); ctx.fillStyle = '#fff'; ctx.font = F(400, 12.5); ctx.fillText('เอกสารแนบ', ML + 10, y + 16); }; })(doc.y));
+    doc.y += 26;
+    doc.flow([R('รายละเอียดหลักสูตร ' + C.name, { w: 700 })], { size: 20, lh: 30 });
+    doc.flow([R('จัดอบรมโดย TESR Academy ' + CO.th, { c: '#444' })], { size: 14.5, lh: 24 });
+    doc.y += 6;
     var info = [
-      ['หลักสูตร', esc(C.name)],
-      ['รูปแบบการอบรม', C.format],
-      ['วันและเวลา', range + ' เวลา ' + C.time + ' (' + C.days + ' วัน)'],
-      ['สถานที่', CO.venueName + '<br>' + CO.venueAddr + '<br>แผนที่ ' + CO.map + ' (จอดรถฟรี / MRT สายสีม่วง สถานีสะพานพระนั่งเกล้า ทางออก 1)'],
-      ['ค่าลงทะเบียน', baht(C.price) + ' บาท/ท่าน (รวม VAT) ช่วงโปรโมชั่น ' + baht(C.promo) + ' บาท/ท่าน (รวม VAT)'],
-      ['ผู้เข้าอบรมต้องเตรียม', C.prep.join('<br>')],
-      ['สิทธิ์เพิ่มเติม', C.bonus]
-    ].concat(n ? [['ผู้เข้าอบรม', d.names.map(function (x, i) { return (i + 1) + '. ' + esc(x); }).join('<br>')]] : []);
-    var p2 = '<div class="ivp">' + headMini() +
-      '<span class="tag" style="margin-top:18px">เอกสารแนบ</span>' +
-      '<h2 style="margin-top:2px">รายละเอียดหลักสูตร ' + esc(C.name) + '</h2>' +
-      '<p class="sub">จัดอบรมโดย TESR Academy ' + CO.th + '</p>' +
-      '<table class="info">' + info.map(function (r) { return '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td></tr>'; }).join('') + '</table>' +
-      '<h3>เรียนจบแล้วทำอะไรได้</h3><ul class="dots">' + C.outcomes.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul>' +
-      '<h3>เหมาะกับใคร</h3><ul class="dots">' + C.audience.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul>' +
-      foot(d.no, 2, total) + '</div>';
+      ['หลักสูตร', [C.name]],
+      ['รูปแบบการอบรม', [C.format]],
+      ['วันและเวลา', [range + ' เวลา ' + C.time + ' (' + C.days + ' วัน)']],
+      ['สถานที่', [CO.venueName + '\n' + CO.venueAddr + '\nแผนที่ ', NW(CO.map), ' (จอดรถฟรี / MRT สายสีม่วง สถานีสะพานพระนั่งเกล้า ทางออก 1)']],
+      ['ค่าลงทะเบียน', [baht(C.price) + ' บาท/ท่าน (รวม VAT) ช่วงโปรโมชั่น ' + baht(C.promo) + ' บาท/ท่าน (รวม VAT)']],
+      ['ผู้เข้าอบรมต้องเตรียม', [C.prep.join('\n')]],
+      ['สิทธิ์เพิ่มเติม', [String(C.bonus)]]
+    ];
+    if (n) info.push(['ผู้เข้าอบรม', [d.names.map(function (x, i) { return (i + 1) + '. ' + x; }).join('\n')]]);
+    doc.table(info.map(function (r) { return { cells: [[R(r[0], { w: 600 })], r[1]], fills: ['#f7f3ea', null] }; }), { x: ML, widths: [150, CW - 150], size: 14, lh: 21, padX: 10, padY: 6, grid: '#d9d2c2' });
+    function h3(t) { doc.ensure(60); doc.y += 14; doc.flow([R(t, { w: 700, c: RED })], { size: 16, lh: 26 }); doc.rule(ML, PW - MR, '#e3d9bf', 1); doc.y += 6; }
+    function bullets(list) { list.forEach(function (t) { var y0 = doc.y; doc.ensure(24); y0 = doc.y; doc.op(function (ctx) { ctx.fillStyle = INK; ctx.beginPath(); ctx.arc(ML + 8, y0 + 12.5, 2.4, 0, Math.PI * 2); ctx.fill(); }); doc.flow([t], { size: 14.5, lh: 24, x: ML + 20, width: CW - 20 }); }); }
+    h3('เรียนจบแล้วทำอะไรได้'); bullets(C.outcomes);
+    h3('เหมาะกับใคร'); bullets(C.audience);
 
-    var sch = readSchedule();
-    var schHtml = sch.map(function (day, i) {
+    // ---- page 3: schedule + payment ----
+    doc.newPage(true);
+    doc.flow([R('กำหนดการอบรม', { w: 700 })], { size: 20, lh: 32 });
+    doc.y += 4;
+    readSchedule().forEach(function (day, i) {
       var date = '';
       if (d.start) { var dt = new Date(d.start.y, d.start.m, d.start.d + i); date = ' (' + fmt({ y: dt.getFullYear(), m: dt.getMonth(), d: dt.getDate() }, era) + ')'; }
-      return '<table class="sch"><tr><th colspan="2">' + esc(day.title) + date + '</th></tr>' +
-        day.rows.map(function (r) { var brk = /พัก/.test(r[1]); return '<tr' + (brk ? ' class="brk"' : '') + '><td>' + esc(r[0]).replace(/:/g, '.') + ' น.</td><td>' + esc(r[1]) + '</td></tr>'; }).join('') + '</table>';
-    }).join('');
-    var p3 = '<div class="ivp">' + headMini() +
-      '<h2 style="margin-top:22px">กำหนดการอบรม</h2>' + schHtml +
-      '<h3>การลงทะเบียนและชำระค่าอบรม</h3>' +
-      '<div class="pay">ลงทะเบียนออนไลน์ที่ <b class="nw">' + esc(C.regUrl) + '</b><br>' +
-      'โอนเงินเข้าบัญชี ธนาคารกสิกรไทย ชื่อบัญชี บจก. ทีอีเอสอาร์ เลขที่บัญชี <span class="nw">027-3-58302-5</span> <span class="nw">สาขาจามจุรี สแควร์</span> หรือสแกน QR พร้อมเพย์บนหน้าลงทะเบียน<br>' +
-      'ออกใบเสร็จรับเงิน/ใบกำกับภาษีในนาม ' + CO.th + ' เลขประจำตัวผู้เสียภาษี ' + CO.tax + '</div>' +
-      foot(d.no, 3, total) + '</div>';
-    return [p1, p2, p3];
+      var rows = [{ cells: [[R(day.title + date, { w: 600, c: '#fff' })]], fills: [RED], head: true, span: true }];
+      day.rows.forEach(function (r) {
+        var brk = /พัก/.test(r[1]), c = brk ? '#777' : INK;
+        rows.push({ cells: [[R(r[0].replace(/:/g, '.') + ' น.', { c: brk ? '#777' : '#333' })], [R(r[1], { c: c })]] });
+      });
+      doc.ensure(80);
+      doc.table(rows, { x: ML, widths: [132, CW - 132], size: 14, lh: 20, padX: 10, padY: 3.5, rule: '#e6e0d2' });
+      doc.y += 10;
+    });
+    h3('การลงทะเบียนและชำระค่าอบรม');
+    doc.y += 4;
+    doc.table([{ cells: [['ลงทะเบียนออนไลน์ที่ ', NW(C.regUrl, { w: 700 }), '\nโอนเงินเข้าบัญชี ธนาคารกสิกรไทย ชื่อบัญชี บจก. ทีอีเอสอาร์ เลขที่บัญชี ', NW('027-3-58302-5'), ' ', NW('สาขาจามจุรี สแควร์'),
+      ' หรือสแกน QR พร้อมเพย์บนหน้าลงทะเบียน\nออกใบเสร็จรับเงิน/ใบกำกับภาษีในนาม ' + CO.th + ' เลขประจำตัวผู้เสียภาษี ' + CO.tax]], fills: ['#fbf8f0'] }],
+      { x: ML, widths: [CW], size: 14, lh: 22, padX: 14, padY: 10, grid: GOLD });
+    return doc;
+  }
+  function drawFooter(ctx, no, page, total) {
+    var y = PH - 26 - 52;
+    ctx.fillStyle = GOLD; ctx.fillRect(ML, y, CW, 1);
+    var lines = layout([R('TESR Academy', { w: 600, c: RED }), R(' สถานที่อบรม ' + CO.venueName + ' ' + CO.venueAddr, { c: '#444' }),
+      R('\nสอบถาม โทร ' + CO.tel1 + ' หรือ ' + CO.tel2 + '   LINE ' + CO.line, { c: '#444' }),
+      R('\nตรวจสอบหนังสือ เลขที่ ' + no + ' ได้ที่ช่องทางข้างต้น', { c: '#444' })], CW - 70, 11, 0);
+    lines.forEach(function (L, i) { drawLine(ctx, L, ML, y + 6 + i * 16, 11, 16); });
+    ctx.fillStyle = '#444'; ctx.font = F(400, 11); ctx.textAlign = 'right'; ctx.fillText('หน้า ' + page + '/' + total, PW - MR, y + 18); ctx.textAlign = 'left';
   }
 
   /* ---------------- generate ---------------- */
   function say(msg, cls) { status.className = cls || ''; status.textContent = msg; }
+  var nextFrame = function () { return new Promise(function (ok) { (window.requestAnimationFrame || setTimeout)(function () { setTimeout(ok, 0); }); }); };
   go.addEventListener('click', async function () {
     var to = $('#invTo').value.trim(), org = $('#invOrg').value.trim();
     var start = parseD(st.value), end = parseD(en.value) || start, issue = parseD(iss.value) || parseD(toInput(new Date()));
@@ -216,58 +362,31 @@
     if (!to) { say('กรุณากรอกตำแหน่งผู้รับหนังสือ', 'err'); $('#invTo').focus(); return; }
     if (!org) { say('กรุณากรอกชื่อหน่วยงาน / องค์กร', 'err'); $('#invOrg').focus(); return; }
     if (!start) { say('กรุณาเลือกวันที่เริ่มอบรม', 'err'); st.focus(); return; }
-    var sd = new Date(start.y, start.m, start.d), ed = new Date(end.y, end.m, end.d);
-    if (ed < sd) { say('วันที่สิ้นสุดต้องไม่ก่อนวันที่เริ่มอบรม', 'err'); en.focus(); return; }
+    if (new Date(end.y, end.m, end.d) < new Date(start.y, start.m, start.d)) { say('วันที่สิ้นสุดต้องไม่ก่อนวันที่เริ่มอบรม', 'err'); en.focus(); return; }
 
     go.disabled = true; say('กำลังสร้างหนังสือเชิญ...');
-    var frame, t0 = Date.now();
+    var t0 = Date.now(), canvas;
     try {
-      var r = Math.floor(1000 + Math.random() * 9000);
-      var no = 'TA-' + C.code + '-' + issue.y + pad(issue.m + 1) + pad(issue.d) + '-' + r;
-      var assets = await Promise.all([loadImg('assets/signature.png'), loadImg('assets/seal.png'), loadImg('assets/tesr-logo-letter.png'), ensureLibs()]);
-      if (assets[2]) LOGO = assets[2];
-      var css = await loadCss();
-      // Render the letter in its own small iframe, so html2canvas only clones the letter (not the whole page,
-      // its lazy images, video thumbnails and background canvas) — much faster and avoids hangs on iPhone Safari.
-      var base = location.href.replace(/[#?].*$/, '').replace(/[^\/]*$/, '');
-      var html = buildPages({ to: to, org: org, names: names, start: start, end: end, issue: issue, era: era, no: no, sig: assets[0], seal: assets[1] }).join('');
-      frame = document.createElement('iframe');
-      frame.setAttribute('aria-hidden', 'true'); frame.tabIndex = -1;
-      frame.style.cssText = 'position:fixed;left:-10000px;top:0;width:794px;height:3400px;border:0;opacity:0;pointer-events:none;';
-      var loaded = new Promise(function (ok) { frame.onload = ok; });
-      frame.srcdoc = '<!doctype html><html lang="th"><head><meta charset="utf-8"><base href="' + base + '">' +
-        '<style>' + css[0] + '</style><style>' + css[1] + '</style><style>html,body{margin:0;background:#fff}</style></head><body>' + html + '</body></html>';
-      document.body.appendChild(frame);
-      await withTimeout(loaded, 15000, 'โหลดหน้าเอกสารไม่สำเร็จ');
-      var fd = frame.contentDocument;
-      if (fd.fonts) {
-        await withTimeout(Promise.all(['400 16px Sarabun', '600 16px Sarabun', '700 16px Sarabun'].map(function (f) { return fd.fonts.load(f, 'ภาษาไทย'); })), 8000).catch(function () {});
-        await withTimeout(fd.fonts.ready, 5000).catch(function () {});
-      }
-      await Promise.all(Array.prototype.map.call(fd.images, function (im) { return im.complete ? 1 : new Promise(function (ok) { im.onload = im.onerror = ok; setTimeout(ok, 6000); }); }));
-      // html2canvas renders from a fresh clone of the document: wait until fonts and images are ready there too
-      var settle = async function (doc) {
-        if (doc.fonts) {
-          await withTimeout(Promise.all(['400 16px Sarabun', '600 16px Sarabun', '700 16px Sarabun'].map(function (f) { return doc.fonts.load(f, 'ภาษาไทย'); })), 8000).catch(function () {});
-          await withTimeout(doc.fonts.ready, 5000).catch(function () {});
-        }
-        await Promise.all(Array.prototype.map.call(doc.images, function (im) { return im.complete ? 1 : new Promise(function (ok) { im.onload = im.onerror = ok; setTimeout(ok, 6000); }); }));
-        await new Promise(function (ok) { requestAnimationFrame(function () { requestAnimationFrame(ok); }); });
-      };
+      var no = 'TA-' + C.code + '-' + issue.y + pad(issue.m + 1) + pad(issue.d) + '-' + Math.floor(1000 + Math.random() * 9000);
+      var got = await withTimeout(Promise.all([loadImg('assets/tesr-logo-letter.png'), loadImg('assets/signature.png'), loadImg('assets/seal.png'), ensureLibs(), loadFonts()]), 20000, 'โหลดไฟล์ประกอบนานเกินไป กรุณาตรวจสอบอินเทอร์เน็ต');
+      var doc = buildDoc({ to: to, org: org, names: names, start: start, end: end, issue: issue, era: era, no: no }, { logo: got[0], sig: got[1], seal: got[2] });
+      var S = Math.min(2, Math.max(1.5, window.devicePixelRatio || 2));
+      canvas = document.createElement('canvas'); canvas.width = Math.round(PW * S); canvas.height = Math.round(PH * S);
+      var ctx = canvas.getContext('2d');
       var pdf = new window.jspdf.jsPDF({ orientation: 'p', unit: 'mm', format: 'a4', compress: true });
-      var pages = fd.querySelectorAll('.ivp');
-      // warm-up pass: the first html2canvas run measures text before the web font is fully in place
-      await withTimeout(window.html2canvas(fd.querySelector('.ivp-head'), { scale: 1, backgroundColor: '#ffffff', logging: false, onclone: settle }), 20000).catch(function () {});
-      for (var i = 0; i < pages.length; i++) {
-        say('กำลังสร้างหน้า ' + (i + 1) + '/' + pages.length + '...');
-        var cv = await withTimeout(window.html2canvas(pages[i], { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false, imageTimeout: 6000, windowWidth: 794, windowHeight: 1123, scrollX: 0, scrollY: 0, onclone: settle }), 30000, 'ใช้เวลานานเกินไป');
+      var total = doc.pages.length;
+      for (var i = 0; i < total; i++) {
+        say('กำลังสร้างหน้า ' + (i + 1) + '/' + total + '...');
+        await nextFrame();
+        ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.setTransform(S, 0, 0, S, 0, 0); ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
+        doc.pages[i].ops.forEach(function (fn) { fn(ctx); });
+        drawFooter(ctx, no, i + 1, total);
         if (i) pdf.addPage('a4', 'p');
-        pdf.addImage(cv.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
-        cv.width = cv.height = 0;
+        pdf.addImage(canvas.toDataURL('image/jpeg', 0.88), 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
       }
       pdf.setProperties({ title: 'หนังสือเชิญเข้าร่วมอบรม ' + C.name, author: CO.th, subject: no, creator: 'TESR Academy' });
-      var safeOrg = org.replace(/[\\/:*?"<>|]+/g, ' ').trim().slice(0, 60);
-      var fname = 'หนังสือเชิญ_' + C.short + '_' + safeOrg + '.pdf';
+      var fname = 'หนังสือเชิญ_' + C.short + '_' + org.replace(/[\\/:*?"<>|]+/g, ' ').trim().slice(0, 60) + '.pdf';
       var url = URL.createObjectURL(pdf.output('blob'));
       pdf.save(fname);
       status.className = 'ok';
@@ -276,7 +395,7 @@
     } catch (e) {
       say('สร้างไฟล์ไม่สำเร็จ: ' + (e && e.message ? e.message : e) + ' กรุณาลองอีกครั้ง หรือติดต่อ LINE www.tesrshop.com/line', 'err');
     } finally {
-      if (frame) frame.remove();
+      if (canvas) { canvas.width = canvas.height = 0; }
       go.disabled = false;
     }
   });
